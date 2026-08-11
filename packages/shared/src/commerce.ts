@@ -1,12 +1,23 @@
 export type DeliveryType = "Kurye" | "Gel-Al";
 
 export type Product = {
-  id: number;
+  id: string | number;
   name: string;
   desc: string;
   price: number;
   image: string;
   badge?: string;
+};
+
+export type Branch = {
+  id: string;
+  name: string;
+  slug: string;
+  address: string;
+  district: string;
+  deliveryFee: number;
+  prepMin: number;
+  prepMax: number;
 };
 
 export type CartSelection = {
