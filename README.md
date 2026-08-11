@@ -20,6 +20,17 @@ BURGERMY ve TIKLADOY ayrı ürünlerdir; kullanıcı, adres, sepet ve sipariş s
 
 Masa servisi, masa numarası ve garson çağırma BURGERMY kapsamına dahil değildir.
 
+## Ortak veri katmanı
+
+Supabase projesi ORYVEX yemek çekirdeği olarak kullanılır. Uygulamalar ayrı kalırken aşağıdaki tablolar ortak sözleşmeleri taşır:
+
+- `sellers`, `branches` ve `seller_members`
+- `products`, `product_options` ve `product_option_values`
+- `profiles`, `addresses`, `carts` ve `cart_items`
+- `orders`, `order_items` ve `order_status_history`
+
+BURGERMY, `sellers.slug = 'burgermy'` ile ayrılır. Kurye/Gel-Al seçimi `orders.fulfillment_type`, seçilen şube ise `orders.branch_id` üzerinden saklanır. Şema değişiklikleri `supabase/migrations` altında sürümlenir ve tüm açık tablolarda RLS kullanılır.
+
 ## Geliştirme
 
 ```bash
