@@ -1,21 +1,34 @@
 # ORYVEX OS
 
-TIKLADOY ve BURGERMY başta olmak üzere ortak kullanıcı, sepet, sipariş, ödeme, teslimat ve yönetim altyapısını paylaşan çok markalı uygulama ekosistemi.
+ORYVEX ürün ekosisteminin monorepo çatısıdır.
 
 ## Uygulamalar
 
-- `apps/tikladoy` — çok kategorili online paket yemek platformu
-- `apps/burgermy` — BURGERMY paket fast-food sipariş uygulaması
+- `apps/burgermy`: BURGERMY paket fast-food sipariş uygulaması
+- `apps/tikladoy`: TIKLADOY çevrim içi paket yemek platformu için ayrılan uygulama alanı
 
-## Ortak çekirdek
+BURGERMY ve TIKLADOY ayrı ürünlerdir; kullanıcı, adres, sepet ve sipariş sözleşmeleri `packages/shared` altında ortaklaştırılır.
 
-Ortak iş kuralları ve servisler `packages/shared` altında geliştirilir. Markaya özel görünüm, menü ve operasyon kuralları kendi `apps/*` dizininde kalır.
+## BURGERMY V1 kapsamı
 
-BURGERMY V1 yalnızca **Kurye ile Teslimat** ve **Gel-Al** sipariş türlerini destekler; masa servisi, masa numarası ve garson çağırma kapsam dışıdır.
+- Telefon doğrulama veya misafir girişi
+- Yalnızca Kurye ile Teslimat ve Gel-Al
+- Adres / şube seçimi
+- Ürün boyutu, içecek, sos, ekstra ve çıkarılacak malzeme seçenekleri
+- Kalıcı sepet, ödeme demosu ve sipariş takibi
+- Mobil ve masaüstü uyumlu Türkçe arayüz
 
-## Komutlar
+Masa servisi, masa numarası ve garson çağırma BURGERMY kapsamına dahil değildir.
 
-- `npm run dev:tikladoy`
-- `npm run dev:burgermy`
-- `npm run build:tikladoy`
-- `npm run build:burgermy`
+## Geliştirme
+
+```bash
+npm install
+npm run dev:burgermy
+```
+
+Üretim kontrolü:
+
+```bash
+npm run build:burgermy
+```
