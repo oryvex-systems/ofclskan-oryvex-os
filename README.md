@@ -11,7 +11,7 @@ BURGERMY ve TIKLADOY ayrı ürünlerdir; kullanıcı, adres, sepet ve sipariş s
 
 ## BURGERMY V1 kapsamı
 
-- Telefon doğrulama veya misafir girişi
+- Supabase tabanlı 6 haneli telefon doğrulama veya misafir girişi
 - Yalnızca Kurye ile Teslimat ve Gel-Al
 - Adres / şube seçimi
 - Ürün boyutu, içecek, sos, ekstra ve çıkarılacak malzeme seçenekleri
@@ -28,7 +28,7 @@ Canlı uygulama: https://burgermy-v1.ofrkcaliskan.chatgpt.site
 
 Canlı V1'de ürün ve şube kataloğu ORYVEX yemek çekirdeğinden okunur. Siparişler platform veritabanında kalıcı tutulur; müşteri cihaz anahtarıyla yalnız kendi geçmişini görür. Şube paneli yönetici e-posta kontrolüyle korunur. Sipariş durumu `Yeni Sipariş → Hazırlanıyor → Kuryeye Verildi/Teslime Hazır → Teslim Edildi` akışında ilerler.
 
-Bu sürüm gerçek sipariş kaydı oluşturur. Online kart tahsilatı henüz açık değildir; ödeme seçenekleri Kapıda Kart ve Kapıda Nakit ile sınırlandırılmıştır.
+Telefon doğrulama uç noktası gerçek Supabase OTP akışını kullanır; SMS teslimi Supabase projesinde bir SMS sağlayıcısı tanımlandığında devreye girer.\n\nBu sürüm gerçek sipariş kaydı oluşturur. Online kart tahsilatı henüz açık değildir; ödeme seçenekleri Kapıda Kart ve Kapıda Nakit ile sınırlandırılmıştır.
 
 ## Ortak veri katmanı
 
