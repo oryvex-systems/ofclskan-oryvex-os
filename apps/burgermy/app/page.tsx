@@ -1,17 +1,22 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { calculateOrder, money, selectionSummary, type CartItem, type DeliveryType, type Product } from "@oryvex/shared";
+import { calculateOrder, money, selectionSummary, type Branch, type CartItem, type DeliveryType, type Product } from "./lib/commerce";
 
 type Screen = "login" | "verify" | "service" | "address" | "home" | "cart" | "checkout" | "success" | "track" | "orders" | "profile";
 
-const products: Product[] = [
-  { id: 1, name: "Classic Burger Menü", desc: "120 g dana köfte, cheddar, turşu, özel sos, patates ve içecek", price: 245, image: "https://burgermy-v1.ofrkcaliskan.chatgpt.site/products/classic.png", badge: "Çok Sevilen" },
-  { id: 2, name: "Duble Burger Menü", desc: "Tek ekmekte iki dana köfte, çift cheddar, patates ve içecek", price: 315, image: "https://burgermy-v1.ofrkcaliskan.chatgpt.site/products/double.png", badge: "Doyuran Menü" },
-  { id: 3, name: "Crispy Chicken Menü", desc: "Çıtır tavuk, taze marul, domates, özel sos, patates ve içecek", price: 225, image: "https://burgermy-v1.ofrkcaliskan.chatgpt.site/products/chicken.png" },
-  { id: 4, name: "Çift Burger Menü", desc: "İki ayrı burger, büyük patates ve iki içecek", price: 465, image: "https://burgermy-v1.ofrkcaliskan.chatgpt.site/products/twin.png", badge: "Paylaşmalık" },
-  { id: 5, name: "BBQ Burger Menü", desc: "Dana köfte, isli barbekü sos, çıtır soğan, cheddar ve içecek", price: 275, image: "https://burgermy-v1.ofrkcaliskan.chatgpt.site/products/bbq.png" },
-  { id: 6, name: "Öğrenci Menü", desc: "Classic burger, patates ve içecek; tam porsiyon, net fiyat", price: 199, image: "https://burgermy-v1.ofrkcaliskan.chatgpt.site/products/student.png", badge: "Avantajlı" },
+const fallbackProducts: Product[] = [
+  { id: 1, name: "Classic Burger Menü", desc: "120 g dana köfte, cheddar, turşu, özel sos, patates ve içecek", price: 245, image: "/products/classic.webp", badge: "Çok Sevilen" },
+  { id: 2, name: "Duble Burger Menü", desc: "Tek ekmekte iki dana köfte, çift cheddar, patates ve içecek", price: 315, image: "/products/double.webp", badge: "Doyuran Menü" },
+  { id: 3, name: "Crispy Chicken Menü", desc: "Çıtır tavuk, taze marul, domates, özel sos, patates ve içecek", price: 225, image: "/products/chicken.webp" },
+  { id: 4, name: "Çift Burger Menü", desc: "İki ayrı burger, büyük patates ve iki içecek", price: 465, image: "/products/twin.webp", badge: "Paylaşmalık" },
+  { id: 5, name: "BBQ Burger Menü", desc: "Dana köfte, isli barbekü sos, çıtır soğan, cheddar ve içecek", price: 275, image: "/products/bbq.webp" },
+  { id: 6, name: "Öğrenci Menü", desc: "Classic burger, patates ve içecek; tam porsiyon, net fiyat", price: 199, image: "/products/student.webp", badge: "Avantajlı" },
+];
+
+const fallbackBranches: Branch[] = [
+  { id: "kadikoy", name: "Kadıköy Şubesi", slug: "kadikoy", address: "Rıhtım Cad., Kadıköy", district: "Kadıköy", deliveryFee: 29, prepMin: 20, prepMax: 35 },
+  { id: "bostanci", name: "Bostancı Şubesi", slug: "bostanci", address: "Bağdat Cad., Bostancı", district: "Kadıköy", deliveryFee: 29, prepMin: 20, prepMax: 35 },
 ];
 
 export default function Home() {
@@ -30,6 +35,12 @@ export default function Home() {
   const [payment, setPayment] = useState("Online Kart");
   const [accepted, setAccepted] = useState(false);
   const [category, setCategory] = useState("Menüler");
+  const [products, setProducts] = useState<Product[]>(fallbackProducts);
+  const [branches, setBranches] = useState<Branch[]>(fallbackBranches);
+  const [selectedBranchId, setSelectedBranchId] = useState(fallbackBranches[0].id);
+  const [catalogLive, setCatalogLive] = useState(false);
+
+  const selectedBranch = branches.find(branch => branch.id === selectedBranchId) ?? branches[0];
 
   const { subtotal, deliveryFee, discount, total } = useMemo(() => calculateOrder(cart, delivery), [cart, delivery]);
   const count = cart.reduce((sum, item) => sum + item.qty, 0);
@@ -58,6 +69,27 @@ export default function Home() {
     window.localStorage.setItem("burgermy-cart-v1", JSON.stringify(cart));
   }, [cart]);
 
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/catalog", { signal: controller.signal })
+      .then(response => {
+        if (!response.ok) throw new Error("Katalog yüklenemedi");
+        return response.json();
+      })
+      .then(data => {
+        if (Array.isArray(data.products) && data.products.length) setProducts(data.products);
+        if (Array.isArray(data.branches) && data.branches.length) {
+          setBranches(data.branches);
+          setSelectedBranchId(current => data.branches.some((branch: Branch) => branch.id === current) ? current : data.branches[0].id);
+        }
+        setCatalogLive(true);
+      })
+      .catch(error => {
+        if (error.name !== "AbortError") setCatalogLive(false);
+      });
+    return () => controller.abort();
+  }, []);
+
   function changeQty(index: number, delta: number) {
     setCart(items => items.map((item, i) => i === index ? { ...item, qty: item.qty + delta } : item).filter(item => item.qty > 0));
   }
@@ -76,7 +108,7 @@ export default function Home() {
           <NavButton active={screen === "orders" || screen === "track"} icon="▤" label="Siparişlerim" onClick={() => go("orders")} />
           <NavButton active={screen === "profile"} icon="◎" label="Profil" onClick={() => go("profile")} />
         </nav>
-        <div className="branch-mini"><span className="live-dot" /><div><b>Kadıköy Şubesi</b><small>Açık · 35-45 dk</small></div></div>
+        <div className="branch-mini"><span className="live-dot" /><div><b>{selectedBranch?.name ?? "BURGERMY"}</b><small>Açık · {selectedBranch?.prepMin ?? 20}-{selectedBranch?.prepMax ?? 35} dk</small></div></div>
       </aside>
 
       <header className={`mobile-header ${["login", "verify", "service", "address"].includes(screen) ? "auth-hidden" : ""}`}>
@@ -88,8 +120,8 @@ export default function Home() {
         {screen === "login" && <LoginScreen go={go} />}
         {screen === "verify" && <VerifyScreen go={go} />}
         {screen === "service" && <ServiceScreen delivery={delivery} setDelivery={setDelivery} go={go} />}
-        {screen === "address" && <AddressScreen delivery={delivery} go={go} />}
-        {screen === "home" && <HomeScreen delivery={delivery} setDelivery={setDelivery} category={category} setCategory={setCategory} openProduct={openProduct} go={go} />}
+        {screen === "address" && <AddressScreen delivery={delivery} branches={branches} selectedBranchId={selectedBranchId} setSelectedBranchId={setSelectedBranchId} go={go} />}
+        {screen === "home" && <HomeScreen products={products} selectedBranch={selectedBranch} catalogLive={catalogLive} delivery={delivery} setDelivery={setDelivery} category={category} setCategory={setCategory} openProduct={openProduct} go={go} />}
         {screen === "cart" && <CartScreen cart={cart} subtotal={subtotal} deliveryFee={deliveryFee} discount={discount} total={total} delivery={delivery} changeQty={changeQty} go={go} />}
         {screen === "checkout" && <CheckoutScreen step={checkoutStep} setStep={setCheckoutStep} delivery={delivery} payment={payment} setPayment={setPayment} total={total} accepted={accepted} setAccepted={setAccepted} go={go} />}
         {screen === "success" && <SuccessScreen total={total} delivery={delivery} go={go} />}
@@ -133,10 +165,15 @@ function ServiceScreen({ delivery, setDelivery, go }: { delivery: DeliveryType; 
   return <AuthShell step="3 / 4 · SİPARİŞ TÜRÜ" title="Nasıl buluşalım?" copy="Sipariş yöntemini seç; süre ve uygun şube buna göre netleşsin."><div className="service-cards"><button className={delivery === "Kurye" ? "selected" : ""} onClick={() => setDelivery("Kurye")}><span>⌁</span><b>Kurye ile Teslimat</b><small>Adresine sıcak teslim · 35-45 dk</small></button><button className={delivery === "Gel-Al" ? "selected" : ""} onClick={() => setDelivery("Gel-Al")}><span>⌂</span><b>Gel-Al</b><small>Şubeden hızlı teslim · 20-25 dk</small></button></div><button className="primary-btn wide" onClick={() => go("address")}>Seçimle Devam Et <span>→</span></button></AuthShell>;
 }
 
-function AddressScreen({ delivery, go }: { delivery: DeliveryType; go: (v: Screen) => void }) {
+function AddressScreen({ delivery, branches, selectedBranchId, setSelectedBranchId, go }: { delivery: DeliveryType; branches: Branch[]; selectedBranchId: string; setSelectedBranchId: (id: string) => void; go: (v: Screen) => void }) {
   const [selectedAddress, setSelectedAddress] = useState(0);
-  const options = delivery === "Kurye" ? ["Ev · Caferağa Mah., Kadıköy", "Yeni adres ekle"] : ["BURGERMY Kadıköy · Rıhtım Cad.", "BURGERMY Bostancı · Bağdat Cad."];
-  return <AuthShell step="4 / 4 · KONUM" title={delivery === "Kurye" ? "Nereye getirelim?" : "Hangi şubeden alacaksın?"} copy={delivery === "Kurye" ? "Teslimat adresini seç veya yeni adresini ekle." : "Sana en uygun açık şubeyi seç."}><div className="address-options">{options.map((option, i) => <button key={option} className={selectedAddress === i ? "selected" : ""} onClick={() => setSelectedAddress(i)}><span>{i === 0 ? "⌂" : "+"}</span><b>{option}</b><i>{selectedAddress === i ? "●" : ""}</i></button>)}</div>{delivery === "Kurye" && selectedAddress === 1 && <div className="new-address"><input placeholder="Mahalle ve sokak" /><div><input placeholder="Bina no" /><input placeholder="Daire" /></div><textarea placeholder="Adres tarifi (isteğe bağlı)" /></div>}<button className="primary-btn wide" onClick={() => go("home")}>Menüyü Aç <span>→</span></button><button className="text-btn wide" onClick={() => go("service")}>← Sipariş türüne dön</button></AuthShell>;
+  const options = delivery === "Kurye" ? ["Ev · Caferağa Mah., Kadıköy", "Yeni adres ekle"] : branches.map(branch => `BURGERMY ${branch.name.replace(" Şubesi", "")} · ${branch.address}`);
+  const activeIndex = delivery === "Kurye" ? selectedAddress : Math.max(0, branches.findIndex(branch => branch.id === selectedBranchId));
+  const choose = (index: number) => {
+    if (delivery === "Kurye") setSelectedAddress(index);
+    else if (branches[index]) setSelectedBranchId(branches[index].id);
+  };
+  return <AuthShell step="4 / 4 · KONUM" title={delivery === "Kurye" ? "Nereye getirelim?" : "Hangi şubeden alacaksın?"} copy={delivery === "Kurye" ? "Teslimat adresini seç veya yeni adresini ekle." : "Sana en uygun açık şubeyi seç."}><div className="address-options">{options.map((option, i) => <button key={option} className={activeIndex === i ? "selected" : ""} onClick={() => choose(i)}><span>{delivery === "Gel-Al" || i === 0 ? "⌂" : "+"}</span><b>{option}</b><i>{activeIndex === i ? "●" : ""}</i></button>)}</div>{delivery === "Kurye" && selectedAddress === 1 && <div className="new-address"><input placeholder="Mahalle ve sokak" /><div><input placeholder="Bina no" /><input placeholder="Daire" /></div><textarea placeholder="Adres tarifi (isteğe bağlı)" /></div>}<button className="primary-btn wide" onClick={() => go("home")}>Menüyü Aç <span>→</span></button><button className="text-btn wide" onClick={() => go("service")}>← Sipariş türüne dön</button></AuthShell>;
 }
 
 function Brand() { return <div className="brand" aria-label="BURGERMY"><span>BURGER</span><em>MY</em></div>; }
@@ -145,17 +182,17 @@ function NavButton({ active, icon, label, onClick }: { active: boolean; icon: st
   return <button className={`nav-button ${active ? "active" : ""}`} onClick={onClick}><span>{icon}</span><small>{label}</small></button>;
 }
 
-function HomeScreen({ delivery, setDelivery, category, setCategory, openProduct, go }: { delivery: "Kurye" | "Gel-Al"; setDelivery: (v: "Kurye" | "Gel-Al") => void; category: string; setCategory: (v: string) => void; openProduct: (p: Product) => void; go: (v: Screen) => void }) {
+function HomeScreen({ products, selectedBranch, catalogLive, delivery, setDelivery, category, setCategory, openProduct, go }: { products: Product[]; selectedBranch?: Branch; catalogLive: boolean; delivery: "Kurye" | "Gel-Al"; setDelivery: (v: "Kurye" | "Gel-Al") => void; category: string; setCategory: (v: string) => void; openProduct: (p: Product) => void; go: (v: Screen) => void }) {
   const categories = ["Menüler", "Burgerler", "Çıtır Lezzetler", "İçecekler"];
   return <>
     <section className="hero">
       <div className="hero-copy">
-        <span className="eyebrow">PAKET FAST-FOOD · TAZE HAZIRLANIR</span>
+        <span className="eyebrow">PAKET FAST-FOOD · TAZE HAZIRLANIR{catalogLive ? " · CANLI MENÜ" : ""}</span>
         <h1>Canın burger istediyse,<br /><em>mesele kapanmıştır.</em></h1>
         <p>Gerçek dana köftesi, günlük hazırlanan malzemeler ve bol porsiyon. Siparişin sıcak, keyfin yerinde.</p>
         <button className="primary-btn" onClick={() => document.getElementById("menu")?.scrollIntoView({ behavior: "smooth" })}>Menüyü İncele <span>↓</span></button>
       </div>
-      <div className="hero-art"><img src="https://burgermy-v1.ofrkcaliskan.chatgpt.site/products/hero.png" alt="BURGERMY Classic Burger menüsü" /><span className="hero-stamp">%100<br />DANA</span></div>
+      <div className="hero-art"><img src="/products/hero.webp" alt="BURGERMY Classic Burger menüsü" /><span className="hero-stamp">%100<br />DANA</span></div>
     </section>
 
     <section className="service-bar">
@@ -163,7 +200,7 @@ function HomeScreen({ delivery, setDelivery, category, setCategory, openProduct,
         <button className={delivery === "Kurye" ? "selected" : ""} onClick={() => setDelivery("Kurye")}><span>⌁</span><b>Kurye ile Teslimat</b><small>35-45 dakika</small></button>
         <button className={delivery === "Gel-Al" ? "selected" : ""} onClick={() => setDelivery("Gel-Al")}><span>⌂</span><b>Gel-Al</b><small>20-25 dakika</small></button>
       </div>
-      <div className="address"><span>●</span><div><small>{delivery === "Kurye" ? "Teslimat adresi" : "Seçilen şube"}</small><b>{delivery === "Kurye" ? "Ev · Caferağa, Kadıköy" : "BURGERMY Kadıköy"}</b></div><button onClick={() => go("profile")}>Değiştir</button></div>
+      <div className="address"><span>●</span><div><small>{delivery === "Kurye" ? "Teslimat adresi" : "Seçilen şube"}</small><b>{delivery === "Kurye" ? "Ev · Caferağa, Kadıköy" : `BURGERMY ${selectedBranch?.name ?? "Şubesi"}`}</b></div><button onClick={() => go("address")}>Değiştir</button></div>
     </section>
 
     <section id="menu" className="menu-section">
@@ -215,6 +252,6 @@ function SuccessScreen({ total, delivery, go }: any) { return <section className
 
 function TrackScreen({ total, delivery, go }: any) { const stages = ["Sipariş alındı", "Hazırlanıyor", delivery === "Kurye" ? "Kuryeye verildi" : "Teslime hazır", "Teslim edildi"]; return <section className="inner-page"><PageTop title="Sipariş Detayı" subtitle="#BM260809 · Bugün, 18:24" back={() => go("orders")} /><div className="track-layout"><div className="track-card"><div className="eta"><span>◷</span><div><small>Tahmini {delivery === "Kurye" ? "teslimat" : "hazırlanma"}</small><strong>{delivery === "Kurye" ? "35-45 dk" : "20-25 dk"}</strong></div></div><h2>Sipariş durumu</h2><div className="timeline">{stages.map((s, i) => <div key={s} className={i < 2 ? "complete" : "future"}><i>{i === 0 ? "✓" : i === 1 ? "●" : ""}</i><span><b>{s}</b><small>{i === 0 ? "Restoran siparişini onayladı · 18:25" : i === 1 ? "Şeflerimiz siparişini hazırlıyor" : i === 2 ? "Sıradaki aşama" : "Afiyet olsun!"}</small></span></div>)}</div></div><aside className="summary-card"><h3>Sipariş Özeti</h3><div className="summary-row"><span>Classic Burger Menü</span><b>1 × ₺245</b></div><div className="summary-row"><span>Teslimat</span><b>₺29</b></div><div className="summary-total"><span>Toplam</span><b>{money(total)}</b></div><button className="secondary-btn wide">Şubeyi Ara</button><button className="text-btn">Destek Al</button></aside></div></section>; }
 
-function OrdersScreen({ go }: { go: (v: Screen) => void }) { return <section className="inner-page"><div className="page-top simple"><div><span className="eyebrow">LEZZET GEÇMİŞİ</span><h1>Siparişlerim</h1></div></div><div className="orders-tabs"><button className="active">Aktif Sipariş</button><button>Geçmiş</button></div><article className="order-card"><div className="order-head"><span><i className="live-dot" /> Hazırlanıyor</span><small>#BM260809 · Bugün 18:24</small></div><div className="order-body"><img src="https://burgermy-v1.ofrkcaliskan.chatgpt.site/products/classic.png" alt="Classic Burger Menü" /><div><h3>Classic Burger Menü</h3><p>1 ürün · Kurye ile teslimat</p><strong>₺274</strong></div><button className="primary-btn" onClick={() => go("track")}>Takip Et →</button></div></article><h2 className="minor-title">Son siparişler</h2><article className="order-card past"><div><b>#BM070826</b><small>7 Ağustos 2026</small></div><span>Çift Burger Menü</span><strong>₺465</strong><button>Tekrarla</button></article></section>; }
+function OrdersScreen({ go }: { go: (v: Screen) => void }) { return <section className="inner-page"><div className="page-top simple"><div><span className="eyebrow">LEZZET GEÇMİŞİ</span><h1>Siparişlerim</h1></div></div><div className="orders-tabs"><button className="active">Aktif Sipariş</button><button>Geçmiş</button></div><article className="order-card"><div className="order-head"><span><i className="live-dot" /> Hazırlanıyor</span><small>#BM260809 · Bugün 18:24</small></div><div className="order-body"><img src="/products/classic.webp" alt="Classic Burger Menü" /><div><h3>Classic Burger Menü</h3><p>1 ürün · Kurye ile teslimat</p><strong>₺274</strong></div><button className="primary-btn" onClick={() => go("track")}>Takip Et →</button></div></article><h2 className="minor-title">Son siparişler</h2><article className="order-card past"><div><b>#BM070826</b><small>7 Ağustos 2026</small></div><span>Çift Burger Menü</span><strong>₺465</strong><button>Tekrarla</button></article></section>; }
 
 function ProfileScreen({ delivery, go }: any) { return <section className="inner-page"><div className="profile-head"><div className="avatar">ÖF</div><div><span className="eyebrow">BURGERMY MİSAFİRİ</span><h1>Hoş geldin!</h1><p>Bilgilerini ve sipariş tercihlerini buradan yönetebilirsin.</p></div></div><div className="profile-grid"><section className="form-card"><h2>Adreslerim</h2><div className="selected-address"><span>⌂</span><div><small>Varsayılan</small><b>Ev · Caferağa Mah., Kadıköy</b></div><button>Düzenle</button></div><button className="secondary-btn wide">+ Yeni Adres Ekle</button></section><section className="form-card"><h2>Tercihler</h2><div className="settings-row"><span>Varsayılan sipariş türü</span><b>{delivery}</b></div><div className="settings-row"><span>Kampanya bildirimleri</span><b>Açık</b></div><div className="settings-row"><span>Yardım ve destek</span><b>→</b></div></section></div><button className="text-btn" onClick={() => go("home")}>Misafir olarak alışverişe devam et</button></section>; }
