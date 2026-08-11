@@ -5,11 +5,13 @@ on:
     branches: [main]
     paths:
       - 'apps/burgermy/**'
+      - 'packages/shared/**'
       - 'package.json'
       - '.github/workflows/burgermy-ci.yml'
   pull_request:
     paths:
       - 'apps/burgermy/**'
+      - 'packages/shared/**'
       - 'package.json'
 
 jobs:
