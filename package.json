@@ -9,6 +9,8 @@
   ],
   "scripts": {
     "dev:tikladoy": "npm --workspace apps/tikladoy run dev",
-    "dev:burgermy": "npm --workspace apps/burgermy run dev"
+    "dev:burgermy": "npm --workspace apps/burgermy run dev",
+    "build:tikladoy": "npm --workspace apps/tikladoy run build",
+    "build:burgermy": "npm --workspace apps/burgermy run build"
   }
 }
