@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { calculateOrder, money, selectionSummary, type Branch, type CartItem, type DeliveryType, type Product } from "./lib/commerce";
+import { calculateOrder, money, selectionSummary, type Branch, type CartItem, type DeliveryType, type Product } from "@oryvex/shared";
 
 type Screen = "login" | "verify" | "service" | "address" | "home" | "cart" | "checkout" | "success" | "track" | "orders" | "profile";
 
