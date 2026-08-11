@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { calculateOrder, money, selectionSummary, type CartItem, type DeliveryType, type Product } from "@oryvex/shared";
 
-type Screen = "home" | "cart" | "checkout" | "success" | "track" | "orders" | "profile";
-type Product = { id: number; name: string; desc: string; price: number; image: string; badge?: string };
+type Screen = "login" | "verify" | "service" | "address" | "home" | "cart" | "checkout" | "success" | "track" | "orders" | "profile";
 
 const products: Product[] = [
   { id: 1, name: "Classic Burger Menü", desc: "120 g dana köfte, cheddar, turşu, özel sos, patates ve içecek", price: 245, image: "https://burgermy-v1.ofrkcaliskan.chatgpt.site/products/classic.png", badge: "Çok Sevilen" },
@@ -14,39 +14,49 @@ const products: Product[] = [
   { id: 6, name: "Öğrenci Menü", desc: "Classic burger, patates ve içecek; tam porsiyon, net fiyat", price: 199, image: "https://burgermy-v1.ofrkcaliskan.chatgpt.site/products/student.png", badge: "Avantajlı" },
 ];
 
-const money = (n: number) => `₺${n.toLocaleString("tr-TR")}`;
-
 export default function Home() {
-  const [screen, setScreen] = useState<Screen>("home");
-  const [delivery, setDelivery] = useState<"Kurye" | "Gel-Al">("Kurye");
+  const [screen, setScreen] = useState<Screen>("login");
+  const [delivery, setDelivery] = useState<DeliveryType>("Kurye");
   const [selected, setSelected] = useState<Product | null>(null);
-  const [cart, setCart] = useState<{ product: Product; qty: number; extras: number }[]>([]);
+  const [cart, setCart] = useState<CartItem[]>([]);
   const [size, setSize] = useState<"Normal" | "Büyük">("Normal");
   const [extraCheese, setExtraCheese] = useState(false);
   const [extraPatty, setExtraPatty] = useState(false);
   const [drink, setDrink] = useState("Kola");
+  const [sauces, setSauces] = useState<string[]>(["BURGERMY Sos"]);
+  const [removed, setRemoved] = useState<string[]>([]);
+  const [productQty, setProductQty] = useState(1);
   const [checkoutStep, setCheckoutStep] = useState(1);
   const [payment, setPayment] = useState("Online Kart");
   const [accepted, setAccepted] = useState(false);
   const [category, setCategory] = useState("Menüler");
 
-  const subtotal = useMemo(() => cart.reduce((sum, item) => sum + (item.product.price + item.extras) * item.qty, 0), [cart]);
-  const deliveryFee = delivery === "Kurye" && cart.length ? 29 : 0;
-  const discount = subtotal >= 450 ? 50 : 0;
-  const total = subtotal + deliveryFee - discount;
+  const { subtotal, deliveryFee, discount, total } = useMemo(() => calculateOrder(cart, delivery), [cart, delivery]);
   const count = cart.reduce((sum, item) => sum + item.qty, 0);
 
   function openProduct(product: Product) {
     setSelected(product);
-    setSize("Normal"); setExtraCheese(false); setExtraPatty(false); setDrink("Kola");
+    setSize("Normal"); setExtraCheese(false); setExtraPatty(false); setDrink("");
+    setSauces(["BURGERMY Sos"]); setRemoved([]); setProductQty(1);
   }
 
   function addToCart() {
-    if (!selected) return;
+    if (!selected || !drink) return;
     const extras = (size === "Büyük" ? 35 : 0) + (extraCheese ? 25 : 0) + (extraPatty ? 65 : 0);
-    setCart(items => [...items, { product: selected, qty: 1, extras }]);
+    setCart(items => [...items, { product: selected, qty: productQty, extras, selection: { size, drink, sauces, removed, extraCheese, extraPatty } }]);
     setSelected(null);
   }
+
+  useEffect(() => {
+    const saved = window.localStorage.getItem("burgermy-cart-v1");
+    if (saved) {
+      try { setCart(JSON.parse(saved)); } catch { window.localStorage.removeItem("burgermy-cart-v1"); }
+    }
+  }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem("burgermy-cart-v1", JSON.stringify(cart));
+  }, [cart]);
 
   function changeQty(index: number, delta: number) {
     setCart(items => items.map((item, i) => i === index ? { ...item, qty: item.qty + delta } : item).filter(item => item.qty > 0));
@@ -58,8 +68,8 @@ export default function Home() {
   }
 
   return (
-    <div className="app-shell">
-      <aside className="side-nav">
+    <div className={`app-shell ${["login", "verify", "service", "address"].includes(screen) ? "auth-mode" : ""}`}>
+      <aside className={`side-nav ${["login", "verify", "service", "address"].includes(screen) ? "auth-hidden" : ""}`}>
         <Brand />
         <nav>
           <NavButton active={screen === "home"} icon="⌂" label="Ana Sayfa" onClick={() => go("home")} />
@@ -69,12 +79,16 @@ export default function Home() {
         <div className="branch-mini"><span className="live-dot" /><div><b>Kadıköy Şubesi</b><small>Açık · 35-45 dk</small></div></div>
       </aside>
 
-      <header className="mobile-header">
+      <header className={`mobile-header ${["login", "verify", "service", "address"].includes(screen) ? "auth-hidden" : ""}`}>
         <Brand />
         <button className="icon-btn" onClick={() => go("profile")} aria-label="Profil">◎</button>
       </header>
 
       <main className="main-canvas">
+        {screen === "login" && <LoginScreen go={go} />}
+        {screen === "verify" && <VerifyScreen go={go} />}
+        {screen === "service" && <ServiceScreen delivery={delivery} setDelivery={setDelivery} go={go} />}
+        {screen === "address" && <AddressScreen delivery={delivery} go={go} />}
         {screen === "home" && <HomeScreen delivery={delivery} setDelivery={setDelivery} category={category} setCategory={setCategory} openProduct={openProduct} go={go} />}
         {screen === "cart" && <CartScreen cart={cart} subtotal={subtotal} deliveryFee={deliveryFee} discount={discount} total={total} delivery={delivery} changeQty={changeQty} go={go} />}
         {screen === "checkout" && <CheckoutScreen step={checkoutStep} setStep={setCheckoutStep} delivery={delivery} payment={payment} setPayment={setPayment} total={total} accepted={accepted} setAccepted={setAccepted} go={go} />}
@@ -88,16 +102,41 @@ export default function Home() {
         <button className="floating-cart" onClick={() => go("cart")}><span className="cart-count">{count}</span><b>Sepeti Gör</b><span>{money(total)}</span></button>
       )}
 
-      <nav className="bottom-nav">
+      <nav className={`bottom-nav ${["login", "verify", "service", "address", "success"].includes(screen) ? "auth-hidden" : ""}`}>
         <NavButton active={screen === "home"} icon="⌂" label="Ana Sayfa" onClick={() => go("home")} />
         <NavButton active={screen === "cart" || screen === "checkout"} icon="▱" label="Sepet" onClick={() => go("cart")} />
         <NavButton active={screen === "orders" || screen === "track"} icon="▤" label="Siparişler" onClick={() => go("orders")} />
         <NavButton active={screen === "profile"} icon="◎" label="Profil" onClick={() => go("profile")} />
       </nav>
 
-      {selected && <ProductModal product={selected} size={size} setSize={setSize} drink={drink} setDrink={setDrink} extraCheese={extraCheese} setExtraCheese={setExtraCheese} extraPatty={extraPatty} setExtraPatty={setExtraPatty} close={() => setSelected(null)} add={addToCart} />}
+      {selected && <ProductModal product={selected} size={size} setSize={setSize} drink={drink} setDrink={setDrink} sauces={sauces} setSauces={setSauces} removed={removed} setRemoved={setRemoved} productQty={productQty} setProductQty={setProductQty} extraCheese={extraCheese} setExtraCheese={setExtraCheese} extraPatty={extraPatty} setExtraPatty={setExtraPatty} close={() => setSelected(null)} add={addToCart} />}
     </div>
   );
+}
+
+function AuthShell({ step, title, copy, children }: { step: string; title: string; copy: string; children: React.ReactNode }) {
+  return <section className="auth-page"><div className="auth-brand"><Brand /><span>PAKET FAST-FOOD</span></div><div className="auth-card"><span className="eyebrow">{step}</span><h1>{title}</h1><p>{copy}</p>{children}</div><small className="auth-foot">Sıcak hazırlanır · Güvenle paketlenir · Hızla ulaşır</small></section>;
+}
+
+function LoginScreen({ go }: { go: (v: Screen) => void }) {
+  const [phone, setPhone] = useState("");
+  const valid = phone.replace(/\D/g, "").length >= 10;
+  return <AuthShell step="1 / 4 · GİRİŞ" title="Lezzete bir adım kaldı." copy="Sipariş durumunu paylaşabilmemiz için telefon numaranı doğrulayalım."><label className="auth-label">Telefon numarası<div className="phone-input"><b>+90</b><input value={phone} onChange={e => setPhone(e.target.value)} placeholder="5XX XXX XX XX" inputMode="tel" autoFocus /></div></label><button className="primary-btn wide" disabled={!valid} onClick={() => go("verify")}>Doğrulama Kodu Gönder <span>→</span></button><button className="text-btn wide" onClick={() => go("service")}>Misafir olarak devam et</button><p className="legal-note">Devam ederek kullanım koşullarını ve gizlilik bildirimini kabul etmiş olursun.</p></AuthShell>;
+}
+
+function VerifyScreen({ go }: { go: (v: Screen) => void }) {
+  const [code, setCode] = useState("");
+  return <AuthShell step="2 / 4 · DOĞRULAMA" title="Kod sende, burger bizde." copy="Telefonuna gelen 4 haneli kodu gir. Demo için herhangi dört rakam yeterli."><label className="auth-label">Doğrulama kodu<input className="otp-input" value={code} onChange={e => setCode(e.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="— — — —" inputMode="numeric" autoFocus /></label><button className="primary-btn wide" disabled={code.length !== 4} onClick={() => go("service")}>Doğrula ve Devam Et <span>→</span></button><button className="text-btn wide" onClick={() => go("login")}>← Telefon numarasını değiştir</button></AuthShell>;
+}
+
+function ServiceScreen({ delivery, setDelivery, go }: { delivery: DeliveryType; setDelivery: (v: DeliveryType) => void; go: (v: Screen) => void }) {
+  return <AuthShell step="3 / 4 · SİPARİŞ TÜRÜ" title="Nasıl buluşalım?" copy="Sipariş yöntemini seç; süre ve uygun şube buna göre netleşsin."><div className="service-cards"><button className={delivery === "Kurye" ? "selected" : ""} onClick={() => setDelivery("Kurye")}><span>⌁</span><b>Kurye ile Teslimat</b><small>Adresine sıcak teslim · 35-45 dk</small></button><button className={delivery === "Gel-Al" ? "selected" : ""} onClick={() => setDelivery("Gel-Al")}><span>⌂</span><b>Gel-Al</b><small>Şubeden hızlı teslim · 20-25 dk</small></button></div><button className="primary-btn wide" onClick={() => go("address")}>Seçimle Devam Et <span>→</span></button></AuthShell>;
+}
+
+function AddressScreen({ delivery, go }: { delivery: DeliveryType; go: (v: Screen) => void }) {
+  const [selectedAddress, setSelectedAddress] = useState(0);
+  const options = delivery === "Kurye" ? ["Ev · Caferağa Mah., Kadıköy", "Yeni adres ekle"] : ["BURGERMY Kadıköy · Rıhtım Cad.", "BURGERMY Bostancı · Bağdat Cad."];
+  return <AuthShell step="4 / 4 · KONUM" title={delivery === "Kurye" ? "Nereye getirelim?" : "Hangi şubeden alacaksın?"} copy={delivery === "Kurye" ? "Teslimat adresini seç veya yeni adresini ekle." : "Sana en uygun açık şubeyi seç."}><div className="address-options">{options.map((option, i) => <button key={option} className={selectedAddress === i ? "selected" : ""} onClick={() => setSelectedAddress(i)}><span>{i === 0 ? "⌂" : "+"}</span><b>{option}</b><i>{selectedAddress === i ? "●" : ""}</i></button>)}</div>{delivery === "Kurye" && selectedAddress === 1 && <div className="new-address"><input placeholder="Mahalle ve sokak" /><div><input placeholder="Bina no" /><input placeholder="Daire" /></div><textarea placeholder="Adres tarifi (isteğe bağlı)" /></div>}<button className="primary-btn wide" onClick={() => go("home")}>Menüyü Aç <span>→</span></button><button className="text-btn wide" onClick={() => go("service")}>← Sipariş türüne dön</button></AuthShell>;
 }
 
 function Brand() { return <div className="brand" aria-label="BURGERMY"><span>BURGER</span><em>MY</em></div>; }
@@ -135,16 +174,19 @@ function HomeScreen({ delivery, setDelivery, category, setCategory, openProduct,
   </>;
 }
 
-function ProductModal({ product, size, setSize, drink, setDrink, extraCheese, setExtraCheese, extraPatty, setExtraPatty, close, add }: any) {
+function ProductModal({ product, size, setSize, drink, setDrink, sauces, setSauces, removed, setRemoved, productQty, setProductQty, extraCheese, setExtraCheese, extraPatty, setExtraPatty, close, add }: any) {
   const extra = (size === "Büyük" ? 35 : 0) + (extraCheese ? 25 : 0) + (extraPatty ? 65 : 0);
+  const toggle = (value: string, values: string[], setter: (next: string[]) => void) => setter(values.includes(value) ? values.filter(v => v !== value) : [...values, value]);
   return <div className="modal-backdrop" onMouseDown={close}><section className="product-modal" onMouseDown={e => e.stopPropagation()}>
     <button className="modal-close" onClick={close} aria-label="Kapat">×</button>
     <div className="modal-image"><img src={product.image} alt={product.name} /></div>
     <div className="modal-body"><span className="eyebrow">MENÜNÜ OLUŞTUR</span><h2>{product.name}</h2><p>{product.desc}</p>
       <Option title="Menü Boyutu" required>{["Normal", "Büyük"].map(v => <Choice key={v} label={v} price={v === "Büyük" ? "+₺35" : "Dahil"} selected={size === v} onClick={() => setSize(v)} />)}</Option>
-      <Option title="İçecek" required><div className="chips">{["Kola", "Kola Zero", "Ayran"].map(v => <button key={v} className={drink === v ? "active" : ""} onClick={() => setDrink(v)}>{v}</button>)}</div></Option>
+      <Option title="İçecek" required><div className="chips">{["Kola", "Kola Zero", "Ayran", "Su"].map(v => <button key={v} className={drink === v ? "active" : ""} onClick={() => setDrink(v)}>{v}</button>)}</div>{!drink && <small className="required-note">Sepete eklemek için içecek seç.</small>}</Option>
+      <Option title="Soslar · Birden fazla seçebilirsin"><div className="chips">{["BURGERMY Sos", "Ketçap", "Mayonez", "Acı Sos"].map(v => <button key={v} className={sauces.includes(v) ? "active" : ""} onClick={() => toggle(v, sauces, setSauces)}>{v}</button>)}</div></Option>
       <Option title="Ekstralar"><Choice label="Ekstra cheddar" price="+₺25" selected={extraCheese} onClick={() => setExtraCheese(!extraCheese)} /><Choice label="Ekstra dana köfte" price="+₺65" selected={extraPatty} onClick={() => setExtraPatty(!extraPatty)} /></Option>
-      <button className="primary-btn wide" onClick={add}><span>Sepete Ekle</span><b>{money(product.price + extra)}</b></button>
+      <Option title="Çıkarılacak Malzemeler"><div className="chips muted-chips">{["Turşu", "Soğan", "Domates", "Marul"].map(v => <button key={v} className={removed.includes(v) ? "active" : ""} onClick={() => toggle(v, removed, setRemoved)}>{v}</button>)}</div></Option>
+      <div className="modal-order-row"><div className="qty"><button onClick={() => setProductQty(Math.max(1, productQty - 1))}>−</button><b>{productQty}</b><button onClick={() => setProductQty(productQty + 1)}>+</button></div><button className="primary-btn" disabled={!drink} onClick={add}><span>Sepete Ekle</span><b>{money((product.price + extra) * productQty)}</b></button></div>
     </div>
   </section></div>;
 }
@@ -156,7 +198,7 @@ function PageTop({ title, subtitle, back }: { title: string; subtitle?: string; 
 
 function CartScreen({ cart, subtotal, deliveryFee, discount, total, delivery, changeQty, go }: any) {
   return <section className="inner-page"><PageTop title="Sepetim" subtitle={`${cart.length} farklı ürün`} back={() => go("home")} />
-    {!cart.length ? <div className="empty-state"><span>▱</span><h2>Sepetin henüz boş</h2><p>Bu sessizliği güzel bir burger bozabilir.</p><button className="primary-btn" onClick={() => go("home")}>Menüyü İncele</button></div> : <div className="checkout-layout"><div className="cart-list">{cart.map((item: any, i: number) => <article className="cart-item" key={`${item.product.id}-${i}`}><img src={item.product.image} alt="" /><div className="cart-copy"><h3>{item.product.name}</h3><p>Orta boy · Kola · Özel sos</p><strong>{money(item.product.price + item.extras)}</strong></div><div className="qty"><button onClick={() => changeQty(i, -1)}>−</button><b>{item.qty}</b><button onClick={() => changeQty(i, 1)}>+</button></div></article>)}<button className="text-btn" onClick={() => go("home")}>+ Başka ürün ekle</button></div><Summary subtotal={subtotal} deliveryFee={deliveryFee} discount={discount} total={total}><div className="delivery-note"><span>⌁</span><div><small>{delivery}</small><b>{delivery === "Kurye" ? "35-45 dk içinde kapında" : "20-25 dk içinde hazır"}</b></div></div><button className="primary-btn wide" onClick={() => { setTimeout(() => {}, 0); go("checkout"); }}>Siparişe Devam Et <span>→</span></button></Summary></div>}
+    {!cart.length ? <div className="empty-state"><span>▱</span><h2>Sepetin henüz boş</h2><p>Bu sessizliği güzel bir burger bozabilir.</p><button className="primary-btn" onClick={() => go("home")}>Menüyü İncele</button></div> : <div className="checkout-layout"><div className="cart-list">{cart.map((item: CartItem, i: number) => <article className="cart-item" key={`${item.product.id}-${i}`}><img src={item.product.image} alt="" /><div className="cart-copy"><h3>{item.product.name}</h3><p>{selectionSummary(item)}</p><strong>{money((item.product.price + item.extras) * item.qty)}</strong></div><div className="qty"><button onClick={() => changeQty(i, -1)}>−</button><b>{item.qty}</b><button onClick={() => changeQty(i, 1)}>+</button></div></article>)}<button className="text-btn" onClick={() => go("home")}>+ Başka ürün ekle</button></div><Summary subtotal={subtotal} deliveryFee={deliveryFee} discount={discount} total={total}><div className="delivery-note"><span>⌁</span><div><small>{delivery}</small><b>{delivery === "Kurye" ? "35-45 dk içinde kapında" : "20-25 dk içinde hazır"}</b></div></div><button className="primary-btn wide" onClick={() => go("checkout")}>Siparişe Devam Et <span>→</span></button></Summary></div>}
   </section>;
 }
 
