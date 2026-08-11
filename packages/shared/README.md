@@ -1,15 +1,12 @@
 # ORYVEX Shared Core
 
-Bu alan TIKLADOY ve BURGERMY tarafından ortak kullanılacak servislerin evidir.
+BURGERMY ve TIKLADOY için ortak kullanıcı, adres, sepet ve sipariş sözleşmelerinin evidir.
 
-Planlanan modüller:
-- Supabase client ve authentication
-- kullanıcı/profil/adres
-- ürün ve kategori modelleri
-- sepet ve sipariş motoru
-- ödeme entegrasyon katmanı
-- teslimat/kurye durumları
-- bildirimler
-- ortak yönetim paneli servisleri
+## Aktif modüller
 
-Markaya özel arayüz ve ürün kuralları `apps/` altında kalır; ortak iş mantığı burada tutulur.
+- Teslimat türleri: Kurye ve Gel-Al
+- Ürün ve sepet tipleri
+- Ürün seçimi özeti
+- Ara toplam, teslimat, indirim ve genel toplam hesaplama
+
+Markaya özel arayüz, menü ve operasyon kuralları `apps/*` altında kalır. Ortak iş mantığı bu pakete taşınır.
