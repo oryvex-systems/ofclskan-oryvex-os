@@ -39,6 +39,7 @@ export default function Home() {
   const [branches, setBranches] = useState<Branch[]>(fallbackBranches);
   const [selectedBranchId, setSelectedBranchId] = useState(fallbackBranches[0].id);
   const [catalogLive, setCatalogLive] = useState(false);
+  const [customerPhone, setCustomerPhone] = useState("");
 
   const selectedBranch = branches.find(branch => branch.id === selectedBranchId) ?? branches[0];
 
@@ -117,8 +118,8 @@ export default function Home() {
       </header>
 
       <main className="main-canvas">
-        {screen === "login" && <LoginScreen go={go} />}
-        {screen === "verify" && <VerifyScreen go={go} />}
+        {screen === "login" && <LoginScreen phone={customerPhone} setPhone={setCustomerPhone} go={go} />}
+        {screen === "verify" && <VerifyScreen phone={customerPhone} verified={() => go("service")} go={go} />}
         {screen === "service" && <ServiceScreen delivery={delivery} setDelivery={setDelivery} go={go} />}
         {screen === "address" && <AddressScreen delivery={delivery} branches={branches} selectedBranchId={selectedBranchId} setSelectedBranchId={setSelectedBranchId} go={go} />}
         {screen === "home" && <HomeScreen products={products} selectedBranch={selectedBranch} catalogLive={catalogLive} delivery={delivery} setDelivery={setDelivery} category={category} setCategory={setCategory} openProduct={openProduct} go={go} />}
@@ -150,17 +151,42 @@ function AuthShell({ step, title, copy, children }: { step: string; title: strin
   return <section className="auth-page"><div className="auth-brand"><Brand /><span>PAKET FAST-FOOD</span></div><div className="auth-card"><span className="eyebrow">{step}</span><h1>{title}</h1><p>{copy}</p>{children}</div><small className="auth-foot">Sıcak hazırlanır · Güvenle paketlenir · Hızla ulaşır</small></section>;
 }
 
-function LoginScreen({ go }: { go: (v: Screen) => void }) {
-  const [phone, setPhone] = useState("");
+function LoginScreen({ phone, setPhone, go }: { phone: string; setPhone: (v: string) => void; go: (v: Screen) => void }) {
   const valid = phone.replace(/\D/g, "").length >= 10;
-  return <AuthShell step="1 / 4 · GİRİŞ" title="Lezzete bir adım kaldı." copy="Sipariş durumunu paylaşabilmemiz için telefon numaranı doğrulayalım."><label className="auth-label">Telefon numarası<div className="phone-input"><b>+90</b><input value={phone} onChange={e => setPhone(e.target.value)} placeholder="5XX XXX XX XX" inputMode="tel" autoFocus /></div></label><button className="primary-btn wide" disabled={!valid} onClick={() => go("verify")}>Doğrulama Kodu Gönder <span>→</span></button><button className="text-btn wide" onClick={() => go("service")}>Misafir olarak devam et</button><p className="legal-note">Devam ederek kullanım koşullarını ve gizlilik bildirimini kabul etmiş olursun.</p></AuthShell>;
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState("");
+  const send = async () => {
+    setSending(true); setError("");
+    try {
+      const response = await fetch("/api/auth/otp", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "send", phone: `+90${phone}` }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Kod gönderilemedi.");
+      go("verify");
+    } catch (reason) { setError(reason instanceof Error ? reason.message : "Kod gönderilemedi."); }
+    finally { setSending(false); }
+  };
+  return <AuthShell step="1 / 4 · GİRİŞ" title="Lezzete bir adım kaldı." copy="Sipariş durumunu paylaşabilmemiz için telefon numaranı doğrulayalım."><label className="auth-label">Telefon numarası<div className="phone-input"><b>+90</b><input value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))} placeholder="5XX XXX XX XX" inputMode="tel" autoFocus /></div></label>{error && <p className="form-error">{error}</p>}<button className="primary-btn wide" disabled={!valid || sending} onClick={send}>{sending ? "Kod Gönderiliyor…" : "Doğrulama Kodu Gönder"} <span>→</span></button><button className="text-btn wide" onClick={() => go("service")}>Misafir olarak devam et</button><p className="legal-note">Devam ederek kullanım koşullarını ve gizlilik bildirimini kabul etmiş olursun.</p></AuthShell>;
 }
 
-function VerifyScreen({ go }: { go: (v: Screen) => void }) {
+function VerifyScreen({ phone, verified, go }: { phone: string; verified: () => void; go: (v: Screen) => void }) {
   const [code, setCode] = useState("");
-  return <AuthShell step="2 / 4 · DOĞRULAMA" title="Kod sende, burger bizde." copy="Telefonuna gelen 4 haneli kodu gir. Demo için herhangi dört rakam yeterli."><label className="auth-label">Doğrulama kodu<input className="otp-input" value={code} onChange={e => setCode(e.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="— — — —" inputMode="numeric" autoFocus /></label><button className="primary-btn wide" disabled={code.length !== 4} onClick={() => go("service")}>Doğrula ve Devam Et <span>→</span></button><button className="text-btn wide" onClick={() => go("login")}>← Telefon numarasını değiştir</button></AuthShell>;
+  const [checking, setChecking] = useState(false);
+  const [seconds, setSeconds] = useState(60);
+  const [error, setError] = useState("");
+  useEffect(() => { if (!seconds) return; const timer = window.setTimeout(() => setSeconds(value => value - 1), 1000); return () => window.clearTimeout(timer); }, [seconds]);
+  const verify = async () => {
+    setChecking(true); setError("");
+    try {
+      const response = await fetch("/api/auth/otp", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "verify", phone: `+90${phone}`, token: code }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Kod doğrulanamadı.");
+      verified();
+    } catch (reason) { setError(reason instanceof Error ? reason.message : "Kod doğrulanamadı."); }
+    finally { setChecking(false); }
+  };
+  const resend = async () => { setError(""); const response = await fetch("/api/auth/otp", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "send", phone: `+90${phone}` }) }); const data = await response.json(); if (response.ok) setSeconds(60); else setError(data.error || "Kod yeniden gönderilemedi."); };
+  return <AuthShell step="2 / 4 · DOĞRULAMA" title="Kod sende, burger bizde." copy={`+90 ${phone} numarasına gelen 6 haneli kodu gir.`}><label className="auth-label">Doğrulama kodu<input className="otp-input" value={code} onChange={e => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="— — — — — —" inputMode="numeric" autoFocus /></label>{error && <p className="form-error">{error}</p>}<button className="primary-btn wide" disabled={code.length !== 6 || checking} onClick={verify}>{checking ? "Doğrulanıyor…" : "Doğrula ve Devam Et"} <span>→</span></button><button className="text-btn wide" disabled={seconds > 0} onClick={resend}>{seconds > 0 ? `Kodu yeniden gönder · ${seconds} sn` : "Kodu yeniden gönder"}</button><button className="text-btn wide" onClick={() => go("login")}>← Telefon numarasını değiştir</button></AuthShell>;
 }
-
 function ServiceScreen({ delivery, setDelivery, go }: { delivery: DeliveryType; setDelivery: (v: DeliveryType) => void; go: (v: Screen) => void }) {
   return <AuthShell step="3 / 4 · SİPARİŞ TÜRÜ" title="Nasıl buluşalım?" copy="Sipariş yöntemini seç; süre ve uygun şube buna göre netleşsin."><div className="service-cards"><button className={delivery === "Kurye" ? "selected" : ""} onClick={() => setDelivery("Kurye")}><span>⌁</span><b>Kurye ile Teslimat</b><small>Adresine sıcak teslim · 35-45 dk</small></button><button className={delivery === "Gel-Al" ? "selected" : ""} onClick={() => setDelivery("Gel-Al")}><span>⌂</span><b>Gel-Al</b><small>Şubeden hızlı teslim · 20-25 dk</small></button></div><button className="primary-btn wide" onClick={() => go("address")}>Seçimle Devam Et <span>→</span></button></AuthShell>;
 }
