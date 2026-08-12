@@ -11,6 +11,16 @@ export type OryvexWorkspace = {
   updated_at: string;
 };
 
+export type OryvexTask = {
+  id: string;
+  title: string;
+  status: "todo" | "in_progress" | "done" | "overdue";
+  priority: "low" | "medium" | "high" | "critical";
+  due_date: string | null;
+  workspace_id: string;
+  oryvex_workspaces?: { name: string } | null;
+};
+
 export type OryvexUser = {
   id: string;
   email?: string;
@@ -29,15 +39,19 @@ export async function getAccessToken() {
   return store.get("oryvex_access_token")?.value ?? null;
 }
 
-export async function getCurrentUser(): Promise<OryvexUser | null> {
+async function authFetch(path: string) {
   const token = await getAccessToken();
   if (!token) return null;
   const { url, key } = config();
-  const response = await fetch(`${url}/auth/v1/user`, {
-    headers: { apikey: key, Authorization: `Bearer ${token}` },
+  return fetch(`${url}${path}`, {
+    headers: { apikey: key, Authorization: `Bearer ${token}`, Accept: "application/json" },
     cache: "no-store",
   });
-  if (!response.ok) return null;
+}
+
+export async function getCurrentUser(): Promise<OryvexUser | null> {
+  const response = await authFetch("/auth/v1/user");
+  if (!response || !response.ok) return null;
   return response.json();
 }
 
@@ -48,20 +62,13 @@ export async function requireUser() {
 }
 
 export async function getWorkspaces(): Promise<OryvexWorkspace[]> {
-  const token = await getAccessToken();
-  if (!token) return [];
-  const { url, key } = config();
-  const response = await fetch(
-    `${url}/rest/v1/oryvex_workspaces?select=id,slug,name,description,status,app_url,updated_at&order=name.asc`,
-    {
-      headers: {
-        apikey: key,
-        Authorization: `Bearer ${token}`,
-        Accept: "application/json",
-      },
-      cache: "no-store",
-    },
-  );
-  if (!response.ok) return [];
+  const response = await authFetch("/rest/v1/oryvex_workspaces?select=id,slug,name,description,status,app_url,updated_at&order=name.asc");
+  if (!response || !response.ok) return [];
+  return response.json();
+}
+
+export async function getTasks(): Promise<OryvexTask[]> {
+  const response = await authFetch("/rest/v1/oryvex_tasks?select=id,title,status,priority,due_date,workspace_id,oryvex_workspaces(name)&order=due_date.asc.nullslast");
+  if (!response || !response.ok) return [];
   return response.json();
 }
