@@ -24,19 +24,23 @@ jobs:
       - name: Build TIKLADOY web
         if: inputs.app == 'tikladoy'
         run: npm run build:tikladoy
+      - name: Build BURGERMY web
+        if: inputs.app == 'burgermy'
+        env:
+          BURGERMY_BASE_PATH: ''
+        run: npm run build:burgermy
       - name: Prepare TIKLADOY web assets
         if: inputs.app == 'tikladoy'
         run: |
           rm -rf mobile/tikladoy/www
           mkdir -p mobile/tikladoy/www
           cp -R apps/tikladoy/dist/. mobile/tikladoy/www/
-      - name: Prepare BURGERMY shell
+      - name: Prepare BURGERMY web assets
         if: inputs.app == 'burgermy'
         run: |
+          rm -rf mobile/burgermy/www
           mkdir -p mobile/burgermy/www
-          cat > mobile/burgermy/www/index.html <<'HTML'
-          <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b0b0b"><title>BURGERMY</title></head><body style="margin:0;background:#0b0b0b"><iframe src="https://burgermy.tr" style="position:fixed;inset:0;width:100%;height:100%;border:0" allow="geolocation;clipboard-write"></iframe></body></html>
-          HTML
+          cp -R apps/burgermy/out/. mobile/burgermy/www/
       - name: Install mobile dependencies
         working-directory: mobile/${{ inputs.app }}
         run: npm install
