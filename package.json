@@ -2,14 +2,16 @@
   "name": "oryvex-os",
   "private": true,
   "version": "0.1.0",
-  "description": "ORYVEX OS monorepo for TIKLADOY, BURGERMY and shared commerce services.",
+  "description": "ORYVEX OS monorepo: ORYVEX Core shell, TIKLADOY, BURGERMY and shared platform services.",
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
   "scripts": {
+    "dev:oryvex": "npm --workspace apps/oryvex run dev",
     "dev:tikladoy": "npm --workspace apps/tikladoy run dev",
     "dev:burgermy": "npm --workspace apps/burgermy run dev",
+    "build:oryvex": "npm --workspace apps/oryvex run build",
     "build:tikladoy": "npm --workspace apps/tikladoy run build",
     "build:burgermy": "npm --workspace apps/burgermy run build"
   }

@@ -1,17 +1,19 @@
-name: TIKLADOY V1 CI
+name: ORYVEX Core CI
 
 on:
   push:
     branches: [main]
     paths:
-      - 'apps/tikladoy/**'
+      - 'apps/oryvex/**'
+      - 'packages/shared/**'
       - 'package.json'
-      - '.github/workflows/tikladoy-ci.yml'
+      - '.github/workflows/oryvex-ci.yml'
   pull_request:
     paths:
-      - 'apps/tikladoy/**'
+      - 'apps/oryvex/**'
+      - 'packages/shared/**'
       - 'package.json'
-      - '.github/workflows/tikladoy-ci.yml'
+      - '.github/workflows/oryvex-ci.yml'
 
 jobs:
   build:
@@ -25,5 +27,5 @@ jobs:
           node-version: 22
       - name: Install
         run: npm install
-      - name: Build TIKLADOY
-        run: npm run build:tikladoy
+      - name: Build ORYVEX
+        run: npm run build:oryvex
