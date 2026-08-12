@@ -1,14 +1,18 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
+const appUrl = process.env.BURGERMY_APP_URL;
+
 const config: CapacitorConfig = {
   appId: 'tr.burgermy.app',
   appName: 'BURGERMY',
   webDir: 'www',
-  server: {
-    url: 'https://burgermy.tr',
-    cleartext: false,
-    allowNavigation: ['burgermy.tr', '*.supabase.co', 'www.paytr.com']
-  },
+  ...(appUrl ? {
+    server: {
+      url: appUrl,
+      cleartext: false,
+      allowNavigation: ['*.supabase.co', 'www.paytr.com']
+    }
+  } : {}),
   ios: { contentInset: 'automatic' },
   android: { allowMixedContent: false },
   plugins: {
