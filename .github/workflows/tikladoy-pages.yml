@@ -34,6 +34,8 @@ jobs:
       - name: Build TIKLADOY
         run: npm run build:tikladoy
       - name: Build BURGERMY static export
+        env:
+          BURGERMY_BASE_PATH: /burgermy
         run: npm run build:burgermy
       - name: Merge BURGERMY under shared Pages site
         run: |
