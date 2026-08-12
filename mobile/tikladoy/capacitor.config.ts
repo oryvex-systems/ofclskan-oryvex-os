@@ -3,12 +3,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   appId: 'tr.tikladoy.app',
   appName: 'TIKLADOY',
-  webDir: 'www',
-  server: {
-    url: 'https://tikladoy.tr',
-    cleartext: false,
-    allowNavigation: ['tikladoy.tr', '*.supabase.co', 'www.paytr.com']
-  },
+  webDir: '../../apps/tikladoy/dist',
   ios: { contentInset: 'automatic' },
   android: { allowMixedContent: false },
   plugins: {
