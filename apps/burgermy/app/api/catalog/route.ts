@@ -46,34 +46,19 @@ export async function GET() {
     `${url}/rest/v1/sellers?slug=eq.burgermy&select=id&limit=1`,
     { headers },
   );
-  if (!sellerResponse.ok) {
-    return NextResponse.json({ error: "Marka bulunamadı" }, { status: 502 });
-  }
+  if (!sellerResponse.ok) return NextResponse.json({ error: "Marka bulunamadı" }, { status: 502 });
 
   const sellers = await sellerResponse.json() as Array<{ id: string }>;
-  if (!sellers[0]) {
-    return NextResponse.json({ error: "Marka bulunamadı" }, { status: 404 });
-  }
+  if (!sellers[0]) return NextResponse.json({ error: "Marka bulunamadı" }, { status: 404 });
 
   const sellerId = encodeURIComponent(sellers[0].id);
   const [productsResponse, branchesResponse, settingsResponse] = await Promise.all([
-    fetch(
-      `${url}/rest/v1/products?seller_id=eq.${sellerId}&is_active=eq.true&select=id,name,description,price,image_url,metadata&order=created_at.asc`,
-      { headers },
-    ),
-    fetch(
-      `${url}/rest/v1/branches?seller_id=eq.${sellerId}&is_active=eq.true&select=id,name,slug,full_address,district,delivery_fee,minimum_order,supports_delivery,supports_pickup,prep_minutes_min,prep_minutes_max&order=created_at.asc`,
-      { headers },
-    ),
-    fetch(
-      `${url}/rest/v1/seller_settings?seller_id=eq.${sellerId}&select=delivery_enabled,pickup_enabled,online_card_enabled,door_pos_enabled,cash_enabled,minimum_order,free_delivery_threshold&limit=1`,
-      { headers },
-    ),
+    fetch(`${url}/rest/v1/products?seller_id=eq.${sellerId}&is_active=eq.true&select=id,name,description,price,image_url,metadata&order=created_at.asc`, { headers }),
+    fetch(`${url}/rest/v1/branches?seller_id=eq.${sellerId}&is_active=eq.true&select=id,name,slug,full_address,district,delivery_fee,minimum_order,supports_delivery,supports_pickup,prep_minutes_min,prep_minutes_max&order=created_at.asc`, { headers }),
+    fetch(`${url}/rest/v1/seller_settings?seller_id=eq.${sellerId}&select=delivery_enabled,pickup_enabled,online_card_enabled,door_pos_enabled,cash_enabled,minimum_order,free_delivery_threshold&limit=1`, { headers }),
   ]);
 
-  if (!productsResponse.ok || !branchesResponse.ok) {
-    return NextResponse.json({ error: "Katalog verisi alınamadı" }, { status: 502 });
-  }
+  if (!productsResponse.ok || !branchesResponse.ok) return NextResponse.json({ error: "Katalog verisi alınamadı" }, { status: 502 });
 
   const productRows = await productsResponse.json() as SupabaseProduct[];
   const branchRows = await branchesResponse.json() as SupabaseBranch[];
@@ -108,7 +93,7 @@ export async function GET() {
     pickupEnabled: settings.pickup_enabled,
     onlineCardEnabled: settings.online_card_enabled,
     doorPosEnabled: settings.door_pos_enabled,
-    cashEnabled: false,
+    cashEnabled: settings.cash_enabled,
     minimumOrder: Number(settings.minimum_order),
     freeDeliveryThreshold: settings.free_delivery_threshold == null ? null : Number(settings.free_delivery_threshold),
   } : {
@@ -116,7 +101,7 @@ export async function GET() {
     pickupEnabled: true,
     onlineCardEnabled: true,
     doorPosEnabled: false,
-    cashEnabled: false,
+    cashEnabled: true,
     minimumOrder: 150,
     freeDeliveryThreshold: null,
   };
