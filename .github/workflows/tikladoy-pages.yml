@@ -49,7 +49,7 @@ jobs:
         run: |
           rm -rf publish
           mkdir -p publish/tikladoy publish/burgermy publish/food-ops
-          cp apps/oryvex-revakhali/index.html publish/index.html
+          cp -a apps/oryvex-revakhali/. publish/
           cp -a apps/tikladoy/dist/. publish/tikladoy/
           cp -a apps/burgermy/out/. publish/burgermy/
           cp -a apps/food-ops/dist/. publish/food-ops/
