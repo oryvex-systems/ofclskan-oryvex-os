@@ -1,11 +1,14 @@
-name: Publish TIKLADOY static site
+name: Publish TIKLADOY + BURGERMY static site
 
 on:
   push:
     branches: [main]
     paths:
       - 'apps/tikladoy/**'
+      - 'apps/burgermy/**'
+      - 'packages/**'
       - 'package.json'
+      - 'package-lock.json'
       - '.github/workflows/tikladoy-pages.yml'
   workflow_dispatch:
 
@@ -13,7 +16,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: tikladoy-static-publish
+  group: oryvex-static-publish
   cancel-in-progress: true
 
 jobs:
@@ -30,6 +33,13 @@ jobs:
         run: npm install
       - name: Build TIKLADOY
         run: npm run build:tikladoy
+      - name: Build BURGERMY static export
+        run: npm run build:burgermy
+      - name: Merge BURGERMY under shared Pages site
+        run: |
+          rm -rf apps/tikladoy/dist/burgermy
+          mkdir -p apps/tikladoy/dist/burgermy
+          cp -a apps/burgermy/out/. apps/tikladoy/dist/burgermy/
       - name: Publish gh-pages branch
         uses: peaceiris/actions-gh-pages@v4
         with:
