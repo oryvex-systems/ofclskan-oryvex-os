@@ -2,7 +2,7 @@
   const SUPABASE_URL = 'https://wdimzayfvtlrxljpsvza.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_FZwX09JGrJt3Q9WXW3V1dQ_-g9aegh4';
   const TOKEN_KEY = 'burgermy-auth-token';
-  const BASE_PATH = '/burgermy';
+  const BASE_PATH = location.pathname.startsWith('/burgermy') ? '/burgermy' : '';
   const nativeFetch = window.fetch.bind(window);
 
   const json = (data, init = {}) => new Response(JSON.stringify(data), {
@@ -22,9 +22,9 @@
   function normalizeStaticPaths(root = document) {
     root.querySelectorAll?.('img[src^="/products/"]').forEach((img) => {
       const src = img.getAttribute('src');
-      if (src && !src.startsWith(`${BASE_PATH}/`)) img.setAttribute('src', `${BASE_PATH}${src}`);
+      if (src && BASE_PATH && !src.startsWith(`${BASE_PATH}/`)) img.setAttribute('src', `${BASE_PATH}${src}`);
     });
-    root.querySelectorAll?.('a[href="/"]').forEach((a) => a.setAttribute('href', `${BASE_PATH}/`));
+    root.querySelectorAll?.('a[href="/"]').forEach((a) => a.setAttribute('href', `${BASE_PATH || ''}/`));
   }
 
   const observer = new MutationObserver(() => normalizeStaticPaths());
