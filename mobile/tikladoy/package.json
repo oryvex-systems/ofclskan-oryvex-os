@@ -1,0 +1,27 @@
+{
+  "name": "tikladoy-mobile",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "sync": "npx cap sync",
+    "android": "npx cap open android",
+    "ios": "npx cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/app": "latest",
+    "@capacitor/browser": "latest",
+    "@capacitor/core": "latest",
+    "@capacitor/geolocation": "latest",
+    "@capacitor/haptics": "latest",
+    "@capacitor/push-notifications": "latest",
+    "@capacitor/share": "latest",
+    "@capacitor/splash-screen": "latest",
+    "@capacitor/status-bar": "latest"
+  },
+  "devDependencies": {
+    "@capacitor/android": "latest",
+    "@capacitor/cli": "latest",
+    "@capacitor/ios": "latest",
+    "typescript": "latest"
+  }
+}
