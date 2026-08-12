@@ -47,7 +47,7 @@ jobs:
           cp apps/oryvex-revakhali/index.html publish/index.html
           cp -a apps/tikladoy/dist/. publish/tikladoy/
           cp -a apps/burgermy/out/. publish/burgermy/
-          echo 'revakhali.tr' > publish/CNAME
+          echo 'revakhali.info' > publish/CNAME
           touch publish/.nojekyll
       - name: Publish gh-pages branch
         uses: peaceiris/actions-gh-pages@v4
