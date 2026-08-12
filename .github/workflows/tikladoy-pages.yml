@@ -33,6 +33,8 @@ jobs:
       - name: Install dependencies
         run: npm install
       - name: Build TIKLADOY
+        env:
+          TIKLADOY_BASE_PATH: /tikladoy/
         run: npm run build:tikladoy
       - name: Build BURGERMY static export
         env:
