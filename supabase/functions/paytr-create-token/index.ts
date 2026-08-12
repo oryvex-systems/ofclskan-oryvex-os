@@ -1,11 +1,29 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const cors = {
-  "Access-Control-Allow-Origin": "https://tikladoy.tr",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+const allowedOrigins = new Set([
+  "https://tikladoy.tr",
+  "https://www.tikladoy.tr",
+  "https://burgermy.com.tr",
+  "https://www.burgermy.com.tr",
+  "https://burgermy.tr",
+  "https://www.burgermy.tr",
+]);
+
+function corsFor(req: Request) {
+  const origin = req.headers.get("Origin") || "";
+  return {
+    "Access-Control-Allow-Origin": allowedOrigins.has(origin) ? origin : "https://tikladoy.tr",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Vary": "Origin",
+  };
+}
+
+function brandBaseUrl(slug: string) {
+  if (slug === "burgermy") return Deno.env.get("BURGERMY_SITE_URL") || "https://burgermy.com.tr";
+  return Deno.env.get("TIKLADOY_SITE_URL") || "https://tikladoy.tr";
+}
 
 const b64 = (buf: ArrayBuffer) => btoa(String.fromCharCode(...new Uint8Array(buf)));
 async function hmac(key: string, value: string) {
@@ -14,6 +32,7 @@ async function hmac(key: string, value: string) {
 }
 
 Deno.serve(async (req: Request) => {
+  const cors = corsFor(req);
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   try {
     const auth = req.headers.get("Authorization") || "";
@@ -31,19 +50,29 @@ Deno.serve(async (req: Request) => {
 
     const { orderId, userName, userAddress, userPhone, userIp = "127.0.0.1" } = await req.json();
     const admin = createClient(supabaseUrl, serviceKey);
-    const { data: order, error: orderError } = await admin.from("orders").select("id,order_no,user_id,total_amount,status").eq("id", orderId).single();
+    const { data: order, error: orderError } = await admin
+      .from("orders")
+      .select("id,order_no,user_id,total_amount,status,seller_id")
+      .eq("id", orderId)
+      .single();
     if (orderError || !order || order.user_id !== user.id) throw new Error("Order not found");
+
+    const { data: seller } = await admin.from("sellers").select("slug,name").eq("id", order.seller_id).single();
+    const sellerSlug = seller?.slug || "tikladoy";
+    if (!['tikladoy', 'burgermy'].includes(sellerSlug)) throw new Error("Unsupported seller for PayTR");
 
     const { data: items, error: itemsError } = await admin.from("order_items").select("product_name,quantity,unit_price,line_total").eq("order_id", orderId);
     if (itemsError || !items?.length) throw new Error("Order items not found");
 
-    const merchantOid = order.order_no || `TKD-${Date.now()}`;
+    const prefix = sellerSlug === "burgermy" ? "BMY" : "TKD";
+    const merchantOid = order.order_no || `${prefix}-${Date.now()}`;
     const amount = Math.round(Number(order.total_amount) * 100);
     const basket = btoa(unescape(encodeURIComponent(JSON.stringify(items.map((x: any) => [x.product_name, String(Number(x.unit_price).toFixed(2)), Number(x.quantity)])))));
-    const email = user.email || "musteri@tikladoy.tr";
+    const email = user.email || `musteri@${sellerSlug === "burgermy" ? "burgermy.com.tr" : "tikladoy.tr"}`;
     const noInstallment = "0", maxInstallment = "0", currency = "TL", testMode = Deno.env.get("PAYTR_TEST_MODE") || "1";
     const hashStr = `${merchantId}${userIp}${merchantOid}${email}${amount}${basket}${noInstallment}${maxInstallment}${currency}${testMode}`;
     const paytrToken = await hmac(merchantKey, hashStr + merchantSalt);
+    const baseUrl = brandBaseUrl(sellerSlug);
 
     const body = new URLSearchParams({
       merchant_id: merchantId,
@@ -53,14 +82,14 @@ Deno.serve(async (req: Request) => {
       payment_amount: String(amount),
       paytr_token: paytrToken,
       user_basket: basket,
-      debug_on: "1",
+      debug_on: testMode === "1" ? "1" : "0",
       no_installment: noInstallment,
       max_installment: maxInstallment,
-      user_name: userName || user.user_metadata?.full_name || "TIKLADOY Müşterisi",
+      user_name: userName || user.user_metadata?.full_name || `${seller?.name || "ORYVEX"} Müşterisi`,
       user_address: userAddress || "Teslimat adresi",
       user_phone: userPhone || "5000000000",
-      merchant_ok_url: "https://tikladoy.tr/#payment-success",
-      merchant_fail_url: "https://tikladoy.tr/#payment-fail",
+      merchant_ok_url: `${baseUrl}/?payment=success`,
+      merchant_fail_url: `${baseUrl}/?payment=fail`,
       timeout_limit: "30",
       currency,
       test_mode: testMode,
