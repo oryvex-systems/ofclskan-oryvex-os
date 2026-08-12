@@ -11,6 +11,7 @@ on:
     paths:
       - 'apps/tikladoy/**'
       - 'package.json'
+      - '.github/workflows/tikladoy-ci.yml'
 
 jobs:
   build:
@@ -22,8 +23,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
       - name: Install
         run: npm install
       - name: Build TIKLADOY
-        run: npm run --workspace apps/tikladoy build
+        run: npm run build:tikladoy
