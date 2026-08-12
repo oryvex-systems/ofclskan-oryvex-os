@@ -1,10 +1,9 @@
-name: Publish ORYVEX + TIKLADOY + BURGERMY + FOOD OPS static site
+name: Publish TIKLADOY INFO + Apps
 
 on:
   push:
     branches: [main]
     paths:
-      - 'apps/oryvex-revakhali/**'
       - 'apps/tikladoy/**'
       - 'apps/burgermy/**'
       - 'apps/food-ops/**'
@@ -41,19 +40,18 @@ jobs:
         env:
           BURGERMY_BASE_PATH: /burgermy
         run: npm run build:burgermy
-      - name: Build FOOD OPS
+      - name: Build FOOD OPS as root
         env:
-          FOOD_OPS_BASE_PATH: /food-ops/
+          FOOD_OPS_BASE_PATH: /
         run: npm run build:food-ops
-      - name: Assemble ORYVEX site
+      - name: Assemble tikladoy.info site
         run: |
           rm -rf publish
-          mkdir -p publish/tikladoy publish/burgermy publish/food-ops
-          cp -a apps/oryvex-revakhali/. publish/
+          mkdir -p publish/tikladoy publish/burgermy
+          cp -a apps/food-ops/dist/. publish/
           cp -a apps/tikladoy/dist/. publish/tikladoy/
           cp -a apps/burgermy/out/. publish/burgermy/
-          cp -a apps/food-ops/dist/. publish/food-ops/
-          echo 'revakhali.info' > publish/CNAME
+          echo 'tikladoy.info' > publish/CNAME
           touch publish/.nojekyll
       - name: Publish gh-pages branch
         uses: peaceiris/actions-gh-pages@v4
