@@ -1,11 +1,14 @@
 import { supabase } from './supabase.js'
 
+const BASE=(import.meta.env.BASE_URL||'/').replace(/\/$/,'')
+const path=(p)=>`${BASE}${p}`||p
+
 function addStoreFooter(){
   if(document.querySelector('#storeLegalFooter')) return;
   const footer=document.createElement('footer');
   footer.id='storeLegalFooter';
   footer.style.cssText='padding:22px 18px 110px;text-align:center;font:500 12px/1.6 Inter,system-ui;color:#8f9898';
-  footer.innerHTML='<a href="/privacy.html" style="color:#cfd5d5">Gizlilik</a> · <a href="/terms.html" style="color:#cfd5d5">Kullanım Koşulları</a> · <a href="/account-delete.html" style="color:#cfd5d5">Hesap Silme</a>';
+  footer.innerHTML=`<a href="${path('/privacy.html')}" style="color:#cfd5d5">Gizlilik</a> · <a href="${path('/terms.html')}" style="color:#cfd5d5">Kullanım Koşulları</a> · <a href="${path('/account-delete.html')}" style="color:#cfd5d5">Hesap Silme</a>`;
   document.querySelector('.app-v2')?.appendChild(footer);
 }
 
@@ -24,7 +27,7 @@ async function injectAccountDelete(){
     btn.disabled=true; status.textContent='Hesap siliniyor…';
     const { error }=await supabase.functions.invoke('delete-account',{body:{confirm:true}});
     if(error){status.textContent='Hesap silme şu anda tamamlanamadı. Hesap Silme sayfasından talep oluşturabilirsin.';btn.disabled=false;return;}
-    await supabase.auth.signOut(); localStorage.removeItem('tikladoy_cart'); location.href='/';
+    await supabase.auth.signOut(); localStorage.removeItem('tikladoy_cart'); location.href=path('/')||'/';
   };
 }
 
