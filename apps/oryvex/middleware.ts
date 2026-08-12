@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const protectedPaths = ["/panel", "/sistemler", "/gorevler", "/ai", "/profil"];
+const protectedPaths = ["/panel", "/sistemler", "/gorevler", "/ai", "/profil", "/santiye-os"];
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
@@ -38,5 +38,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/panel/:path*", "/sistemler/:path*", "/gorevler/:path*", "/ai/:path*", "/profil/:path*"],
+  matcher: ["/panel/:path*", "/sistemler/:path*", "/gorevler/:path*", "/ai/:path*", "/profil/:path*", "/santiye-os/:path*"],
 };
