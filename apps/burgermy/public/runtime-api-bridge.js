@@ -90,6 +90,14 @@
         return response;
       }
 
+      if (url === '/api/admin') {
+        if (!token) return json({ error: 'Yönetim yetkisi gerekli.' }, { status: 401 });
+        return callEdge('burgermy-admin', {
+          method,
+          body: method === 'PATCH' ? (init.body || '{}') : undefined,
+        }, token);
+      }
+
       return nativeFetch(input, init);
     } catch (error) {
       return json({ error: error instanceof Error ? error.message : 'İşlem tamamlanamadı.' }, { status: 500 });
