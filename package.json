@@ -11,8 +11,10 @@
     "dev:oryvex": "npm --workspace apps/oryvex run dev",
     "dev:tikladoy": "npm --workspace apps/tikladoy run dev",
     "dev:burgermy": "npm --workspace apps/burgermy run dev",
+    "dev:food-ops": "npm --workspace apps/food-ops run dev",
     "build:oryvex": "npm --workspace apps/oryvex run build",
     "build:tikladoy": "npm --workspace apps/tikladoy run build",
-    "build:burgermy": "npm --workspace apps/burgermy run build"
+    "build:burgermy": "npm --workspace apps/burgermy run build",
+    "build:food-ops": "npm --workspace apps/food-ops run build"
   }
 }
