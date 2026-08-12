@@ -17,5 +17,5 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="tr"><body><script src="/runtime-api-bridge.js" />{children}</body></html>;
+  return <html lang="tr"><body><script src="/burgermy/runtime-api-bridge.js" />{children}</body></html>;
 }
