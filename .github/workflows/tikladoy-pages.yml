@@ -1,9 +1,10 @@
-name: Publish TIKLADOY + BURGERMY static site
+name: Publish ORYVEX + TIKLADOY + BURGERMY static site
 
 on:
   push:
     branches: [main]
     paths:
+      - 'apps/oryvex-revakhali/**'
       - 'apps/tikladoy/**'
       - 'apps/burgermy/**'
       - 'packages/**'
@@ -37,15 +38,19 @@ jobs:
         env:
           BURGERMY_BASE_PATH: /burgermy
         run: npm run build:burgermy
-      - name: Merge BURGERMY under shared Pages site
+      - name: Assemble ORYVEX test site
         run: |
-          rm -rf apps/tikladoy/dist/burgermy
-          mkdir -p apps/tikladoy/dist/burgermy
-          cp -a apps/burgermy/out/. apps/tikladoy/dist/burgermy/
+          rm -rf publish
+          mkdir -p publish/tikladoy publish/burgermy
+          cp apps/oryvex-revakhali/index.html publish/index.html
+          cp -a apps/tikladoy/dist/. publish/tikladoy/
+          cp -a apps/burgermy/out/. publish/burgermy/
+          echo 'revakhali.tr' > publish/CNAME
+          touch publish/.nojekyll
       - name: Publish gh-pages branch
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./apps/tikladoy/dist
+          publish_dir: ./publish
           publish_branch: gh-pages
           force_orphan: true
