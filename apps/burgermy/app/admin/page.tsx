@@ -72,7 +72,7 @@ export default function AdminPage() {
         <Toggle label="Gel-Al" checked={settings.pickup_enabled} onChange={v => setSettings({...settings, pickup_enabled:v})}/>
         <Toggle label="Online Kart / PayTR" checked={settings.online_card_enabled} onChange={v => setSettings({...settings, online_card_enabled:v})}/>
         <Toggle label="Kapıda POS" checked={settings.door_pos_enabled} onChange={v => setSettings({...settings, door_pos_enabled:v})}/>
-        <Toggle label="Kapıda Nakit" checked={false} disabled onChange={()=>{}}/><small style={{opacity:.65}}>Kapıda nakit sistem gereği kapalıdır.</small>
+        <Toggle label="Kapıda Nakit" checked={settings.cash_enabled} onChange={v => setSettings({...settings, cash_enabled:v})}/>
         <label style={styles.label}>Minimum sipariş<input style={styles.input} type="number" value={Number(settings.minimum_order || 0)} onChange={e=>setSettings({...settings,minimum_order:Number(e.target.value)})}/></label>
         <button style={styles.primary} disabled={saving==="settings"} onClick={saveSettings}>{saving==="settings"?"Kaydediliyor…":"Ayarları Kaydet"}</button>
       </>}</div>
