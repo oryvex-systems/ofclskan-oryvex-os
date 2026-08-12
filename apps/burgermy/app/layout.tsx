@@ -17,5 +17,6 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="tr"><body><script src="/burgermy/runtime-api-bridge.js" />{children}</body></html>;
+  const basePath = process.env.NEXT_PUBLIC_BURGERMY_BASE_PATH || "";
+  return <html lang="tr"><body><script src={`${basePath}/runtime-api-bridge.js`} />{children}</body></html>;
 }
