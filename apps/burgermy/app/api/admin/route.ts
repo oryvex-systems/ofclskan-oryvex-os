@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 const allowedStatuses = new Set(["received", "preparing", "courier_assigned", "on_the_way", "delivered", "cancelled"]);
-const mutableSettings = new Set(["delivery_enabled", "pickup_enabled", "online_card_enabled", "door_pos_enabled", "minimum_order", "free_delivery_threshold", "order_notifications_enabled", "customer_notifications_enabled"]);
+const mutableSettings = new Set(["delivery_enabled", "pickup_enabled", "online_card_enabled", "door_pos_enabled", "cash_enabled", "minimum_order", "free_delivery_threshold", "order_notifications_enabled", "customer_notifications_enabled"]);
 
 function env() {
   const url = process.env.SUPABASE_URL;
@@ -75,7 +75,7 @@ export async function PATCH(request: Request) {
   if (body.action === "settings") {
     if (!["owner", "manager"].includes(auth.role)) return NextResponse.json({ error: "Bu ayar için yönetici yetkisi gerekli." }, { status: 403 });
     const incoming = body.settings && typeof body.settings === "object" ? body.settings : {};
-    const update: Record<string, unknown> = { updated_at: new Date().toISOString(), cash_enabled: false };
+    const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
     for (const [key, value] of Object.entries(incoming)) if (mutableSettings.has(key)) update[key] = value;
     const response = await fetch(`${config.url}/rest/v1/seller_settings?seller_id=eq.${encodeURIComponent(auth.seller.id)}`, {
       method: "PATCH", headers, body: JSON.stringify(update), cache: "no-store",
