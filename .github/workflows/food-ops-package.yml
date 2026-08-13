@@ -1,0 +1,45 @@
+name: Package FOOD OPS for TIKLADOY.INFO
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/food-ops/**'
+      - 'packages/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/food-ops-package.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: food-ops-production-package
+  cancel-in-progress: true
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install
+      - name: Build FOOD OPS as root
+        env:
+          FOOD_OPS_BASE_PATH: /
+        run: npm run build:food-ops
+      - name: Prepare tikladoy.info package
+        run: |
+          echo 'tikladoy.info' > apps/food-ops/dist/CNAME
+          touch apps/food-ops/dist/.nojekyll
+      - name: Upload isolated FOOD OPS site
+        uses: actions/upload-artifact@v4
+        with:
+          name: food-ops-tikladoy-info
+          path: apps/food-ops/dist
