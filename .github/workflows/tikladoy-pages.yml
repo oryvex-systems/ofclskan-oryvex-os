@@ -1,4 +1,4 @@
-name: Publish TIKLADOY INFO + Apps
+name: Publish TIKLADOY.TR + Apps
 
 on:
   push:
@@ -32,26 +32,26 @@ jobs:
           node-version: 22
       - name: Install dependencies
         run: npm install
-      - name: Build TIKLADOY
+      - name: Build TIKLADOY as root
         env:
-          TIKLADOY_BASE_PATH: /tikladoy/
+          TIKLADOY_BASE_PATH: /
         run: npm run build:tikladoy
       - name: Build BURGERMY static export
         env:
           BURGERMY_BASE_PATH: /burgermy
         run: npm run build:burgermy
-      - name: Build FOOD OPS as root
+      - name: Build FOOD OPS
         env:
-          FOOD_OPS_BASE_PATH: /
+          FOOD_OPS_BASE_PATH: /food-ops/
         run: npm run build:food-ops
-      - name: Assemble tikladoy.info site
+      - name: Assemble tikladoy.tr site
         run: |
           rm -rf publish
-          mkdir -p publish/tikladoy publish/burgermy
-          cp -a apps/food-ops/dist/. publish/
-          cp -a apps/tikladoy/dist/. publish/tikladoy/
+          mkdir -p publish/burgermy publish/food-ops
+          cp -a apps/tikladoy/dist/. publish/
           cp -a apps/burgermy/out/. publish/burgermy/
-          echo 'tikladoy.info' > publish/CNAME
+          cp -a apps/food-ops/dist/. publish/food-ops/
+          echo 'tikladoy.tr' > publish/CNAME
           touch publish/.nojekyll
       - name: Publish gh-pages branch
         uses: peaceiris/actions-gh-pages@v4
