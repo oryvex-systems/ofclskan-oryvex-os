@@ -1,12 +1,10 @@
-name: Publish TIKLADOY.TR + Apps
+name: Publish TIKLADOY.TR
 
 on:
   push:
     branches: [main]
     paths:
       - 'apps/tikladoy/**'
-      - 'apps/burgermy/**'
-      - 'apps/food-ops/**'
       - 'packages/**'
       - 'package.json'
       - 'package-lock.json'
@@ -17,7 +15,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: oryvex-static-publish
+  group: tikladoy-production
   cancel-in-progress: true
 
 jobs:
@@ -36,21 +34,11 @@ jobs:
         env:
           TIKLADOY_BASE_PATH: /
         run: npm run build:tikladoy
-      - name: Build BURGERMY static export
-        env:
-          BURGERMY_BASE_PATH: /burgermy
-        run: npm run build:burgermy
-      - name: Build FOOD OPS
-        env:
-          FOOD_OPS_BASE_PATH: /food-ops/
-        run: npm run build:food-ops
       - name: Assemble tikladoy.tr site
         run: |
           rm -rf publish
-          mkdir -p publish/burgermy publish/food-ops
+          mkdir -p publish
           cp -a apps/tikladoy/dist/. publish/
-          cp -a apps/burgermy/out/. publish/burgermy/
-          cp -a apps/food-ops/dist/. publish/food-ops/
           echo 'tikladoy.tr' > publish/CNAME
           touch publish/.nojekyll
       - name: Publish gh-pages branch
