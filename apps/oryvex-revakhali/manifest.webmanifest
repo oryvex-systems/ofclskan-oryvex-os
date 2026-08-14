@@ -1,0 +1,20 @@
+{
+  "name": "ORYVEX ŞANTİYE OS",
+  "short_name": "ŞANTİYE OS",
+  "description": "ORYVEX şirket içi şantiye, proje, saha, finans, satın alma, depo ve hakediş yönetim sistemi.",
+  "start_url": "/giris.html",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#07111f",
+  "theme_color": "#07111f",
+  "lang": "tr-TR",
+  "orientation": "portrait-primary",
+  "icons": [
+    {"src":"/oryvex-santiye-icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}
+  ],
+  "shortcuts": [
+    {"name":"Ana Panel","short_name":"Panel","url":"/index.html"},
+    {"name":"Projeler","short_name":"Projeler","url":"/modul.html?m=projeler"},
+    {"name":"Günlük","short_name":"Günlük","url":"/modul.html?m=gunluk"}
+  ]
+}
