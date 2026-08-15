@@ -1,0 +1,1 @@
+(()=>{try{const h=location.hostname.toLowerCase();if(location.protocol==='http:'&&(h==='revakhali.info'||h==='www.revakhali.info')){const u='https://'+location.host+location.pathname+location.search+location.hash;location.replace(u)}}catch(e){console.warn('https-redirect',e)}})();
