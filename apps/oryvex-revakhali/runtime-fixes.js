@@ -10,7 +10,7 @@
     input,select,textarea{font-size:16px}
     .oryvex-net{position:fixed;left:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:9998;padding:7px 10px;border-radius:999px;font:700 10px Inter,system-ui,sans-serif;border:1px solid #23445f;background:#07111fe8;color:#7f91a8;display:none}
     .oryvex-net.show{display:block}.oryvex-net.off{color:#ff9b9b;border-color:#6b2834}
-    @media(max-width:600px){main,.w,.wrap{padding-bottom:84px!important}.hero h1{overflow-wrap:anywhere}.row{min-width:0}.row>div{min-width:0}.nav{scrollbar-width:thin}}
+    @media(max-width:600px){main,.w,.wrap{padding-bottom:84px!important}.hero h1{overflow-wrap:anywhere}.row{min-width:0}.row>div{min-width:0}.nav{scrollbar-width:thin}.oryvex-net{bottom:calc(88px + env(safe-area-inset-bottom))}}
   `;
   document.head.appendChild(style);
 
@@ -52,6 +52,15 @@
       };
       setTimeout(guard,350);setTimeout(guard,1000);
     }
+  }
+
+  // Load the compact bottom navigation only on authenticated app screens.
+  if(!document.querySelector('script[data-oryvex-mobile-nav]')){
+    const s=document.createElement('script');
+    s.src='mobile-nav.js';
+    s.defer=true;
+    s.dataset.oryvexMobileNav='1';
+    document.body.appendChild(s);
   }
 
   // Make external-window links safe by default.
