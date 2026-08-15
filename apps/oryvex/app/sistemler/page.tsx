@@ -11,7 +11,8 @@ const labels: Record<string,string> = {
 export default async function SystemsPage(){
   await requireUser();
   const systems = await getWorkspaces();
-  const active = systems.filter((item)=>item.status === "active").length + 1;
+  const coreProducts = 2; // ŞANTİYE OS + CAMİ PRO
+  const active = systems.filter((item)=>item.status === "active").length + coreProducts;
   const development = systems.filter((item)=>item.status === "development").length;
   const paused = systems.filter((item)=>item.status === "paused").length;
   const archived = systems.filter((item)=>item.status === "archived").length;
@@ -28,14 +29,26 @@ export default async function SystemsPage(){
     <section className="system-list">
       <a className="glass-card system-card" href="/santiye-os">
         <div className="system-head">
-          <div><h2 style={{margin:"0 0 5px"}}>ŞANTİYE OS</h2><p style={{margin:0,color:"#9ca6b8"}}>İnşaat firmaları için proje, saha günlüğü ve hızlı raporlama sistemi.</p></div>
+          <div><h2 style={{margin:"0 0 5px"}}>ŞANTİYE OS</h2><p style={{margin:0,color:"#9ca6b8"}}>İnşaat firmaları için saha yönetimi, günlük şantiye kayıtları, personel/usta, tedarik, hakediş ve resmî kayıt hazırlık sistemi.</p></div>
           <span className="badge">Aktif</span>
         </div>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,marginTop:18,color:"#8f99ab",fontSize:13}}>
-          <span>ORYVEX altında MVP sürümü</span>
+          <span>ORYVEX Standardı 003 · Ortak saha çekirdeği</span>
           <strong style={{color:"#64e5ff"}}>Sisteme Gir →</strong>
         </div>
       </a>
+
+      <a className="glass-card system-card" href="https://turbo-doodle-2ymqw1q.pages.github.io" target="_blank" rel="noreferrer">
+        <div className="system-head">
+          <div><h2 style={{margin:"0 0 5px"}}>CAMİ PRO</h2><p style={{margin:0,color:"#9ca6b8"}}>Cami projeleri için proje okuma, metraj, iş programı, finans, tedarik, hakediş, tezyinat ve Tasarım Kütüphanesi sistemi.</p></div>
+          <span className="badge">Aktif</span>
+        </div>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,marginTop:18,color:"#8f99ab",fontSize:13}}>
+          <span>ORYVEX Standardı 002 + 003 · Cami uzmanlık sistemi</span>
+          <strong style={{color:"#c49a48"}}>CAMİ PRO'ya Gir →</strong>
+        </div>
+      </a>
+
       {systems.map((system)=>{
         const content = <>
           <div className="system-head">
@@ -51,7 +64,7 @@ export default async function SystemsPage(){
           ? <a className="glass-card system-card" key={system.id} href={system.app_url} target="_blank" rel="noreferrer">{content}</a>
           : <article className="glass-card system-card" key={system.id}>{content}</article>;
       })}
-      {systems.length === 0 && <article className="glass-card"><h2>ORYVEX sistemleri hazırlanıyor</h2><p className="section-subtitle">ŞANTİYE OS kullanıma hazır. Diğer çalışma alanları bağlandıkça burada görünecek.</p></article>}
+      {systems.length === 0 && <article className="glass-card"><h2>ORYVEX çekirdeği aktif</h2><p className="section-subtitle">ŞANTİYE OS ve CAMİ PRO kullanıma hazır. Diğer çalışma alanları bağlandıkça burada görünecek.</p></article>}
     </section>
     <BottomNav active="/sistemler" />
   </main>
