@@ -1,0 +1,51 @@
+name: OCX DOPLT Control
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "OCX DOPLT action"
+        required: true
+        default: "inventory"
+        type: choice
+        options:
+          - inventory
+          - deploy-control
+
+permissions:
+  contents: read
+
+env:
+  CLO_ACCOUNT_ID: ${{ secrets.CLO_ACCOUNT_ID }}
+  CLO_API_TOKEN: ${{ secrets.CLO_API_TOKEN }}
+  OCX_DOPLT_SERVICE: ocx-doplt
+
+jobs:
+  control:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Validate bindings
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${CLO_ACCOUNT_ID:-}" || { echo "Missing CLO_ACCOUNT_ID"; exit 1; }
+          test -n "${CLO_API_TOKEN:-}" || { echo "Missing CLO_API_TOKEN"; exit 1; }
+
+      - name: Discover CLO zones
+        if: ${{ inputs.action == 'inventory' }}
+        working-directory: packages/ocx-domain-autopilot
+        run: node inventory.mjs
+
+      - name: Deploy OCX DOPLT control worker
+        if: ${{ inputs.action == 'deploy-control' }}
+        working-directory: packages/ocx-domain-autopilot
+        run: node deploy-control.mjs
