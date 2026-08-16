@@ -38,7 +38,7 @@ export default async function SystemsPage(){
         </div>
       </a>
 
-      <a className="glass-card system-card" href="https://turbo-doodle-2ymqw1q.pages.github.io" target="_blank" rel="noreferrer">
+      <a className="glass-card system-card" href="https://turbo-doodle-2ymqw1q.pages.github.io/kontrol-merkezi.html" target="_blank" rel="noreferrer">
         <div className="system-head">
           <div><h2 style={{margin:"0 0 5px"}}>CAMİ PRO</h2><p style={{margin:0,color:"#9ca6b8"}}>Cami projeleri için proje okuma, metraj, iş programı, finans, tedarik, hakediş, tezyinat ve Tasarım Kütüphanesi sistemi.</p></div>
           <span className="badge">Aktif</span>
