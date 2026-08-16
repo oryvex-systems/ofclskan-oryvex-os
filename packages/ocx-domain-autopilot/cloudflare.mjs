@@ -24,6 +24,51 @@ async function cf(path, init = {}) {
   return body.result;
 }
 
+async function cfRaw(path, init = {}) {
+  const token = env('CLO_API_TOKEN');
+  const response = await fetch(`${API}${path}`, {
+    ...init,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      ...(init.headers || {})
+    }
+  });
+
+  const text = await response.text();
+  let body;
+  try { body = text ? JSON.parse(text) : {}; } catch { body = { raw: text }; }
+
+  if (!response.ok || body.success === false) {
+    const message = body?.errors?.map(e => e.message).join('; ') || `HTTP ${response.status}`;
+    throw new Error(`CLO API error: ${message}`);
+  }
+  return body.result ?? body;
+}
+
+export async function verifyToken() {
+  return cf('/user/tokens/verify');
+}
+
+export async function listZones() {
+  const result = [];
+  let page = 1;
+  while (true) {
+    const response = await fetch(`${API}/zones?per_page=50&page=${page}`, {
+      headers: { Authorization: `Bearer ${env('CLO_API_TOKEN')}` }
+    });
+    const body = await response.json();
+    if (!response.ok || body.success === false) {
+      const message = body?.errors?.map(e => e.message).join('; ') || `HTTP ${response.status}`;
+      throw new Error(`CLO API error: ${message}`);
+    }
+    result.push(...(body.result || []));
+    const totalPages = body.result_info?.total_pages || 1;
+    if (page >= totalPages) break;
+    page += 1;
+  }
+  return result;
+}
+
 export async function findZone(domain) {
   const zones = await cf(`/zones?name=${encodeURIComponent(domain)}`);
   return zones?.[0] || null;
@@ -41,6 +86,29 @@ export async function attachWorkerDomain({ accountId, hostname, service, zoneId,
   return cf(`/accounts/${accountId}/workers/domains`, {
     method: 'PUT',
     body: JSON.stringify({ hostname, service, zone_id: zoneId, zone_name: zoneName })
+  });
+}
+
+export async function getWorkerScript(accountId, service) {
+  return cfRaw(`/accounts/${accountId}/workers/scripts/${encodeURIComponent(service)}`);
+}
+
+export async function deployWorkerModule({ accountId, service, source, compatibilityDate = '2026-08-17' }) {
+  const boundary = `----ocx-${crypto.randomUUID()}`;
+  const metadata = {
+    main_module: 'worker.js',
+    compatibility_date: compatibilityDate
+  };
+  const body = [
+    `--${boundary}\r\nContent-Disposition: form-data; name="metadata"\r\nContent-Type: application/json\r\n\r\n${JSON.stringify(metadata)}\r\n`,
+    `--${boundary}\r\nContent-Disposition: form-data; name="worker.js"; filename="worker.js"\r\nContent-Type: application/javascript+module\r\n\r\n${source}\r\n`,
+    `--${boundary}--\r\n`
+  ].join('');
+
+  return cfRaw(`/accounts/${accountId}/workers/scripts/${encodeURIComponent(service)}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': `multipart/form-data; boundary=${boundary}` },
+    body
   });
 }
 
