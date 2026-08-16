@@ -1,0 +1,46 @@
+name: OCX DOPLT Pilot
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "DOPLT execution mode"
+        required: true
+        default: "plan"
+        type: choice
+        options:
+          - plan
+          - apply
+
+permissions:
+  contents: read
+
+env:
+  OCX_MODE: ${{ inputs.mode }}
+  CLO_ACCOUNT_ID: ${{ secrets.CLO_ACCOUNT_ID }}
+  CLO_API_TOKEN: ${{ secrets.CLO_API_TOKEN }}
+
+jobs:
+  doplt-sozundeusta:
+    name: SÖZÜNDE USTA DOPLT
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Validate required secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${CLO_ACCOUNT_ID:-}" || { echo "Missing CLO_ACCOUNT_ID"; exit 1; }
+          test -n "${CLO_API_TOKEN:-}" || { echo "Missing CLO_API_TOKEN"; exit 1; }
+
+      - name: Run DOPLT pilot
+        working-directory: packages/ocx-domain-autopilot
+        run: node pilot.mjs
