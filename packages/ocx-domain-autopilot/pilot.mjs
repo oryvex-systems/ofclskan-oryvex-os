@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import { snapshot, attachWorkerDomain } from './cloudflare.mjs';
 
 const config = JSON.parse(await fs.readFile(new URL('./pilot.sozundeusta.json', import.meta.url), 'utf8'));
+const policy = JSON.parse(await fs.readFile(new URL('./policy.ocx.json', import.meta.url), 'utf8'));
 const mode = process.env.OCX_MODE || 'plan';
 
 function audit(event, data = {}) {
@@ -10,6 +11,21 @@ function audit(event, data = {}) {
     return value;
   }));
   console.log(JSON.stringify({ ts: new Date().toISOString(), event, ...safe }));
+}
+
+function assertPolicyScope() {
+  if (policy.project !== config.project) {
+    throw new Error(`Policy project mismatch: ${policy.project} != ${config.project}`);
+  }
+  if (!policy.scope.allowedDomains.includes(config.domain)) {
+    throw new Error(`Domain blocked by OCX policy: ${config.domain}`);
+  }
+  if (!policy.scope.allowedWorkerServices.includes(config.workerService)) {
+    throw new Error(`Worker service blocked by OCX policy: ${config.workerService}`);
+  }
+  if (!['plan', 'apply'].includes(mode)) {
+    throw new Error(`Unsupported OCX_MODE: ${mode}`);
+  }
 }
 
 function desiredAttachment(snapshotData) {
@@ -26,6 +42,15 @@ async function verifyHttps(url) {
 }
 
 async function main() {
+  assertPolicyScope();
+  audit('POLICY_PASS', {
+    engine: policy.engine,
+    project: config.project,
+    domain: config.domain,
+    workerService: config.workerService,
+    mode
+  });
+
   audit('PILOT_START', { project: config.project, domain: config.domain, mode });
   const before = await snapshot(config.domain);
   audit('SNAPSHOT', {
@@ -59,6 +84,12 @@ async function main() {
       });
       audit('ACTION_EXECUTED', { action: 'CLO.WORKER.DOMAIN.CONNECT' });
     }
+  } else {
+    audit('NO_CHANGE_REQUIRED', {
+      action: 'CLO.WORKER.DOMAIN.CONNECT',
+      hostname: config.domain,
+      service: config.workerService
+    });
   }
 
   if (mode === 'apply') {
