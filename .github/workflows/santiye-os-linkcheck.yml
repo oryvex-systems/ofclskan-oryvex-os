@@ -1,0 +1,40 @@
+name: Santiye OS Link Check
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/oryvex-revakhali/**'
+      - '.github/workflows/santiye-os-linkcheck.yml'
+  pull_request:
+    paths:
+      - 'apps/oryvex-revakhali/**'
+
+jobs:
+  links:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate local HTML links
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd apps/oryvex-revakhali
+          python3 - <<'PY'
+          import pathlib,re,sys
+          root=pathlib.Path('.')
+          files={p.name for p in root.glob('*.html')}
+          bad=[]
+          for p in root.glob('*.html'):
+              text=p.read_text(encoding='utf-8',errors='ignore')
+              for href in re.findall(r'href=["\']([^"\']+)["\']',text):
+                  if href.startswith(('#','http:','https:','mailto:','tel:','javascript:')): continue
+                  target=href.split('?',1)[0].split('#',1)[0] or p.name
+                  if target.endswith('.html') and target not in files:
+                      bad.append((p.name,href))
+          if bad:
+              print('Broken local links:')
+              for a,b in bad: print(f'  {a} -> {b}')
+              sys.exit(1)
+          print(f'OK: {len(files)} HTML screens scanned; no broken local HTML links.')
+          PY
