@@ -1,0 +1,29 @@
+{
+  "project": "SOZUNDE_USTA",
+  "domain": "sozundeusta.com.tr",
+  "canonicalUrl": "https://sozundeusta.com.tr/",
+  "dnsProvider": "CLO",
+  "registrarProvider": "TURKTICARET",
+  "workerService": "sozunde-usta",
+  "hostnames": [
+    "sozundeusta.com.tr",
+    "www.sozundeusta.com.tr"
+  ],
+  "policy": {
+    "dnsRead": "L1",
+    "dnsCreateUpdate": "L2",
+    "workerAttach": "L2",
+    "workerDeploy": "L2",
+    "nameserverChange": "L3",
+    "registrarTransfer": "L3",
+    "domainDelete": "L3",
+    "billing": "L3"
+  },
+  "verification": {
+    "requireZoneActive": true,
+    "requireHttps": true,
+    "requireCanonical": true,
+    "requireAudit": true,
+    "requireNoSecretLogging": true
+  }
+}
