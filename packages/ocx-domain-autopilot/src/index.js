@@ -1,5 +1,7 @@
 export { runDomainAutopilot, DOMAIN_STATES } from './orchestrator.js';
 export { compileExecutionBatch, executeDnsBatch, verifyDnsState, verifyDomainReady } from './execution.js';
+export { createAuditEntry, createAuditLedger } from './audit.js';
+export { buildRecoveryPlan } from './recovery.js';
 
 const MAIL_TYPES = new Set(['MX']);
 const MAIL_NAME_HINTS = ['_dmarc', '_domainkey', 'autodiscover', 'mail'];
