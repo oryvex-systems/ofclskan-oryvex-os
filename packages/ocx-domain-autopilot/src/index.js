@@ -107,7 +107,7 @@ export function runDnsSafety({ domain, currentRecords = [], plannedActions = [],
   for (const action of plannedActions) {
     const target = action.old || action.next;
     if (!target) continue;
-    if (isMailRecord(target) && ['REMOVE','UPDATE'].includes(action.action)) {
+    if (isMailRecord(target) && ['REMOVE','UPDATE','REVIEW'].includes(action.action)) {
       findings.push({ code: 'MAIL_RISK_DETECTED', status: 'BLOCK', action });
     }
     if (target.name === domain && target.type === 'CNAME' && current.some(r => r.name === domain && r.type === 'A')) {
@@ -118,7 +118,7 @@ export function runDnsSafety({ domain, currentRecords = [], plannedActions = [],
     }
   }
 
-  if (!rollbackAvailable && plannedActions.some(a => ['UPDATE','REMOVE'].includes(a.action))) {
+  if (!rollbackAvailable && plannedActions.some(a => ['UPDATE','REMOVE','REVIEW'].includes(a.action))) {
     findings.push({ code: 'ROLLBACK_POINT_MISSING', status: 'BLOCK' });
   }
 
