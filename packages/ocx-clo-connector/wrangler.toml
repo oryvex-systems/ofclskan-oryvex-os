@@ -1,0 +1,15 @@
+name = "ocx-clo-connector"
+main = "src/index.js"
+compatibility_date = "2026-08-17"
+workers_dev = true
+
+[vars]
+OCX_ENV = "production"
+OCX_CONNECTOR_NAME = "CLO"
+
+# Secrets must NOT be committed.
+# Configure in Cloudflare Worker secrets:
+#   CLOUDFLARE_API_TOKEN
+#   OCX_SHARED_SECRET
+# Optional if account-scoped operations are added later:
+#   CLOUDFLARE_ACCOUNT_ID
