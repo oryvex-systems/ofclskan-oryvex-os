@@ -13,8 +13,8 @@ permissions:
   contents: read
 
 env:
-  CLO_API_TOKEN: ${{ secrets.CLO_API_TOKEN || secrets.CLOUDFLARE_API_TOKEN }}
-  CLO_ACCOUNT_ID: ${{ secrets.CLO_ACCOUNT_ID || secrets.CLOUDFLARE_ACCOUNT_ID }}
+  CLO_API_TOKEN: ${{ secrets.CLO_API_TOKEN || secrets.CLOUDFLARE_API_TOKEN || secrets.CLO_TOKEN || secrets.CLOUDFLARE_TOKEN || secrets.CF_API_TOKEN || secrets.CF_API_KEY || secrets.CLO_API_KEY }}
+  CLO_ACCOUNT_ID: ${{ secrets.CLO_ACCOUNT_ID || secrets.CLOUDFLARE_ACCOUNT_ID || secrets.CF_ACCOUNT_ID }}
 
 jobs:
   deploy-verify:
