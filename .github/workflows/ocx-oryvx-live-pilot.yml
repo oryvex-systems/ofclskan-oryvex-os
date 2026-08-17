@@ -1,0 +1,38 @@
+name: OCX ORYVX Live Pilot
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/ocx-domain-autopilot/deploy-oryvx-test.mjs'
+      - 'packages/ocx-domain-autopilot/worker/ocx-test-worker.js'
+      - '.github/workflows/ocx-oryvx-live-pilot.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CLO_API_TOKEN: ${{ secrets.CLO_API_TOKEN || secrets.CLOUDFLARE_API_TOKEN }}
+  CLO_ACCOUNT_ID: ${{ secrets.CLO_ACCOUNT_ID || secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+jobs:
+  deploy-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate Cloudflare bindings
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${CLO_API_TOKEN:-}" || { echo 'Missing Cloudflare API token secret'; exit 1; }
+          test -n "${CLO_ACCOUNT_ID:-}" || { echo 'Missing Cloudflare account id secret'; exit 1; }
+      - name: Deploy isolated OCX pilot and verify
+        working-directory: packages/ocx-domain-autopilot
+        run: node deploy-oryvx-test.mjs
