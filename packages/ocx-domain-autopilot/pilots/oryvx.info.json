@@ -1,0 +1,58 @@
+{
+  "pilot_id": "OCX-CLO-PILOT-ORYVX-INFO-001",
+  "domain": "oryvx.info",
+  "mode": "CONTROLLED_TEST",
+  "purpose": "OCX Domain Autopilot + Cloudflare Worker gerçek alan adı pilot testi",
+  "preserve_existing": true,
+  "observed_baseline": {
+    "source": "operator screenshots 2026-08-17",
+    "records": [
+      {
+        "type": "A",
+        "name": "oryvx.info",
+        "content": "31.186.11.254",
+        "proxied": true,
+        "ttl": 1,
+        "policy": "PRESERVE"
+      },
+      {
+        "type": "CNAME",
+        "name": "www.oryvx.info",
+        "content": "oryvx.info",
+        "proxied": true,
+        "ttl": 1,
+        "policy": "PRESERVE"
+      }
+    ]
+  },
+  "test_surface": {
+    "hostname": "ocx-test.oryvx.info",
+    "dns_record": {
+      "type": "CNAME",
+      "name": "ocx-test.oryvx.info",
+      "content": "oryvx.info",
+      "proxied": true,
+      "ttl": 1
+    },
+    "worker_route": "ocx-test.oryvx.info/*",
+    "expected_health_path": "/health"
+  },
+  "safety": {
+    "risk": "R2",
+    "no_root_change": true,
+    "no_www_change": true,
+    "no_delete": true,
+    "mail_records_untouched": true,
+    "rollback": "REMOVE_TEST_ROUTE_AND_TEST_CNAME_ONLY",
+    "verify_required": true
+  },
+  "readiness_checks": [
+    "ZONE_ACTIVE",
+    "BASELINE_DNS_PRESERVED",
+    "TEST_DNS_RESOLVES",
+    "WORKER_ROUTE_ACTIVE",
+    "HTTPS_VALID",
+    "HTTP_200_HEALTH",
+    "AUDIT_WRITTEN"
+  ]
+}
