@@ -28,7 +28,9 @@ export async function withRetry(operation, {
   onAttempt = () => {}
 } = {}) {
   let lastError;
+  let attempts = 0;
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    attempts = attempt;
     try {
       onAttempt({ attempt, status: 'STARTED' });
       const result = await operation(attempt);
@@ -41,7 +43,7 @@ export async function withRetry(operation, {
       if (!canRetry) break;
     }
   }
-  return { success: false, attempts: maxAttempts, error: lastError?.message || 'unknown error' };
+  return { success: false, attempts, error: lastError?.message || 'unknown error' };
 }
 
 export function createDeadLetterQueue() {
