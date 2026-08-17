@@ -33,7 +33,7 @@ test('retry succeeds after transient failures', async () => {
 test('non-retryable failure stops immediately', async () => {
   const result = await withRetry(async () => { throw new Error('fatal'); }, { maxAttempts: 5, retryable: () => false });
   assert.equal(result.success, false);
-  assert.equal(result.attempts, 5);
+  assert.equal(result.attempts, 1);
   assert.equal(result.error, 'fatal');
 });
 
