@@ -1,0 +1,64 @@
+{
+  "version": "0.1",
+  "engine": "OCX_POLICY_ENGINE",
+  "project": "SOZUNDE_USTA",
+  "domain": "sozundeusta.com.tr",
+  "provider": "CLO",
+  "levels": {
+    "L1": {
+      "autonomous": [
+        "CLO.AUTH.VERIFY",
+        "CLO.ACCOUNT.GET",
+        "CLO.ZONE.GET",
+        "CLO.ZONE.STATUS",
+        "CLO.NAMESERVERS.GET",
+        "DNS.SNAPSHOT",
+        "DNS.VERIFY",
+        "TLS.VERIFY",
+        "HTTPS.GET",
+        "CANONICAL.VERIFY",
+        "AUDIT.WRITE"
+      ]
+    },
+    "L2": {
+      "controlled": [
+        "DNS.CREATE",
+        "DNS.UPDATE",
+        "CLO.WORKER.DOMAIN.CONNECT",
+        "WORKER.DEPLOY"
+      ],
+      "requirements": [
+        "snapshot_before_mutation",
+        "verify_after_mutation",
+        "redacted_audit_log",
+        "safe_retry_only"
+      ]
+    },
+    "L3": {
+      "humanApprovalRequired": [
+        "DOMAIN.TRANSFER",
+        "NAMESERVER.CHANGE",
+        "DOMAIN.DELETE",
+        "BILLING.CHANGE",
+        "TOKEN.REVOKE",
+        "IRREVERSIBLE.OPERATION"
+      ]
+    }
+  },
+  "scope": {
+    "allowedDomains": [
+      "sozundeusta.com.tr",
+      "www.sozundeusta.com.tr"
+    ],
+    "allowedWorkerServices": [
+      "sozunde-usta"
+    ]
+  },
+  "secrets": {
+    "storeInRepository": false,
+    "requiredRuntimeNames": [
+      "CLO_ACCOUNT_ID",
+      "CLO_API_TOKEN"
+    ]
+  }
+}
