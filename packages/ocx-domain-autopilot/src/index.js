@@ -1,3 +1,4 @@
+export { runDomainAutopilot, DOMAIN_STATES } from './orchestrator.js';
 export { compileExecutionBatch, executeDnsBatch, verifyDnsState, verifyDomainReady } from './execution.js';
 
 const MAIL_TYPES = new Set(['MX']);
