@@ -1,3 +1,5 @@
+export { compileExecutionBatch, executeDnsBatch, verifyDnsState, verifyDomainReady } from './execution.js';
+
 const MAIL_TYPES = new Set(['MX']);
 const MAIL_NAME_HINTS = ['_dmarc', '_domainkey', 'autodiscover', 'mail'];
 const VERIFICATION_HINTS = ['verification', 'google-site-verification', 'ms=', 'stripe-verification'];
