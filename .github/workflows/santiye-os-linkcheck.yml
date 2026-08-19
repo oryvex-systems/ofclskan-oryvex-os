@@ -28,7 +28,8 @@ jobs:
           required={
             'index.html','finans.html','nakit-akis.html','metraj-maliyet-teklif.html',
             'yaklasik-maliyet.html','teklifler.html','kesif-revizyon.html','satin-alma.html',
-            'hakedisler.html','santiye-defteri.html','mahal-ilerleme.html','resmi-surecler.html'
+            'hakedisler.html','santiye-defteri.html','mahal-ilerleme.html','resmi-surecler.html',
+            'tedarikci-teklifleri.html','puantaj-maliyet.html'
           }
           bad=[]
           missing=sorted(required-html)
