@@ -9,6 +9,7 @@ on:
   pull_request:
     paths:
       - 'apps/oryvex-revakhali/**'
+  workflow_dispatch:
 
 jobs:
   links:
