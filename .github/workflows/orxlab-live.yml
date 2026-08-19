@@ -1,0 +1,38 @@
+name: ORXLAB Live
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/orxlab/**'
+      - '.github/workflows/orxlab-live.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CLO_API_TOKEN: ${{ secrets.CLO_API_TOKEN || secrets.CLOUDFLARE_API_TOKEN || secrets.CLO_TOKEN || secrets.CLOUDFLARE_TOKEN || secrets.CF_API_TOKEN || secrets.CF_API_KEY || secrets.CLO_API_KEY }}
+  CLO_ACCOUNT_ID: ${{ secrets.CLO_ACCOUNT_ID || secrets.CLOUDFLARE_ACCOUNT_ID || secrets.CF_ACCOUNT_ID }}
+
+jobs:
+  deploy-verify:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate Cloudflare bindings
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${CLO_API_TOKEN:-}" || { echo 'Missing Cloudflare API token secret'; exit 1; }
+          test -n "${CLO_ACCOUNT_ID:-}" || { echo 'Missing Cloudflare account id secret'; exit 1; }
+      - name: Deploy and verify ORXLAB
+        working-directory: packages/orxlab
+        run: node deploy-orxlab.mjs
