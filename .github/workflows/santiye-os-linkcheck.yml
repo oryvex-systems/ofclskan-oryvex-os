@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Validate local HTML links
+      - name: Validate local screens and assets
         shell: bash
         run: |
           set -euo pipefail
@@ -23,18 +23,33 @@ jobs:
           python3 - <<'PY'
           import pathlib,re,sys
           root=pathlib.Path('.')
-          files={p.name for p in root.glob('*.html')}
+          html={p.name for p in root.glob('*.html')}
+          assets={p.name for p in root.iterdir() if p.is_file()}
+          required={
+            'index.html','finans.html','nakit-akis.html','metraj-maliyet-teklif.html',
+            'yaklasik-maliyet.html','teklifler.html','kesif-revizyon.html','satin-alma.html',
+            'hakedisler.html','santiye-defteri.html','mahal-ilerleme.html','resmi-surecler.html'
+          }
           bad=[]
+          missing=sorted(required-html)
           for p in root.glob('*.html'):
               text=p.read_text(encoding='utf-8',errors='ignore')
               for href in re.findall(r'href=["\']([^"\']+)["\']',text):
                   if href.startswith(('#','http:','https:','mailto:','tel:','javascript:')): continue
                   target=href.split('?',1)[0].split('#',1)[0] or p.name
-                  if target.endswith('.html') and target not in files:
+                  if target.endswith('.html') and target not in html:
                       bad.append((p.name,href))
+              for src in re.findall(r'<script[^>]+src=["\']([^"\']+)["\']',text):
+                  if src.startswith(('http:','https:','//')): continue
+                  target=src.split('?',1)[0].split('#',1)[0]
+                  if target and target not in assets:
+                      bad.append((p.name,src))
+          if missing:
+              print('Missing required screens:')
+              for x in missing: print(' ',x)
           if bad:
-              print('Broken local links:')
+              print('Broken local references:')
               for a,b in bad: print(f'  {a} -> {b}')
-              sys.exit(1)
-          print(f'OK: {len(files)} HTML screens scanned; no broken local HTML links.')
+          if missing or bad: sys.exit(1)
+          print(f'OK: {len(html)} HTML screens scanned; required screens and local references valid.')
           PY
