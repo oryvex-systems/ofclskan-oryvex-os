@@ -30,7 +30,8 @@ jobs:
             'yaklasik-maliyet.html','teklifler.html','kesif-revizyon.html','satin-alma.html',
             'hakedisler.html','santiye-defteri.html','mahal-ilerleme.html','resmi-surecler.html',
             'tedarikci-teklifleri.html','puantaj-maliyet.html','makine-bakim.html','sozlesme-degisiklik.html',
-            'maliyet-forecast.html','raporlar.html','planlama-finans.html'
+            'maliyet-forecast.html','raporlar.html','planlama-finans.html','plan-finans.html',
+            'operasyon.html','depo-evrak.html','yonetici.html','ayarlar.html','kullanicilar.html','sistem-kontrol.html'
           }
           bad=[]
           missing=sorted(required-html)
