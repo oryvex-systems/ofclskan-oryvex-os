@@ -25,7 +25,7 @@ a{color:inherit}
 
 <section class="card">
 <div class="grid">
-<label>Taşeron<input id="name"></label>
+<label>Taşeron<input id="name"></label><label>İş Kalemi<select id="workItem"><option value="">İş kalemi seçin</option></select></label>
 <label>Sözleşme Bedeli<input id="contract" type="number" value="0"></label>
 <label>İşveren Karşılık Bedeli<input id="employer" type="number" value="0"></label>
 <label>Saha / İşveren İlerleme %<input id="fieldPct" type="number" step=".01" value="0"></label>
@@ -59,7 +59,41 @@ const $=id=>document.getElementById(id);
 const n=id=>Number($(id).value||0);
 const money=v=>new Intl.NumberFormat('tr-TR',{style:'currency',currency:'TRY'}).format(v);
 
-function calc(){
+let pursantaj=[];
+
+function loadPursantaj(){
+  try { pursantaj=JSON.parse(localStorage.getItem('oryvex_core_pursantaj')||'[]'); }
+  catch(e){ pursantaj=[]; }
+
+  const el=$('workItem');
+  el.innerHTML='<option value="">İş kalemi seçin</option>';
+
+  pursantaj.forEach((w,i)=>{
+    const o=document.createElement('option');
+    o.value=i;
+    o.textContent=w.name||w.description||w.item||('İş Kalemi '+(i+1));
+    el.appendChild(o);
+  });
+}
+
+function syncWork(){
+  const i=$('workItem').value;
+  if(i==='') return;
+
+  const w=pursantaj[Number(i)]||{};
+  const amount=Number(w.amount||w.total||w.value||0);
+  const progress=Number(
+    w.cumulative_progress_percent||
+    w.progress_percent||
+    w.progress||0
+  );
+
+  if(amount>0) $('employer').value=amount;
+  $('fieldPct').value=progress;
+  calc(false);
+}
+
+function calc(save=true){
  const field=n('fieldPct'), period=n('periodPct'), cum=n('cumPct');
  const employerBase=n('employer')*field/100;
  const subBase=n('contract')*period/100;
@@ -86,8 +120,11 @@ function calc(){
  ? '<p class="warn">UYARI: Taşeron kümülatif ilerlemesi saha/işveren ilerlemesini aşıyor.</p>'
  : '<p class="ok">İlerleme kontrolü uygun.</p>';
 
- localStorage.setItem('oryvex_subcontract_payments',JSON.stringify({
+ if(save) localStorage.setItem('oryvex_subcontract_payments',JSON.stringify({
    subcontractor:$('name').value,
+   workItemIndex:$('workItem').value,
+   workItemName:$('workItem').selectedOptions[0]?.textContent||'',
+
    contract:n('contract'),employer:n('employer'),
    fieldPct:field,periodPct:period,cumPct:cum,
    vat:n('vat'),withholding:n('withholding'),
@@ -98,8 +135,12 @@ function calc(){
  }));
 }
 
+loadPursantaj();
+$('workItem').addEventListener('change',syncWork);
+
 const saved=JSON.parse(localStorage.getItem('oryvex_subcontract_payments')||'null');
 if(saved){
+ if(saved.workItemIndex!==undefined) $('workItem').value=saved.workItemIndex;
  const map={name:'subcontractor',contract:'contract',employer:'employer',fieldPct:'fieldPct',periodPct:'periodPct',cumPct:'cumPct',vat:'vat',withholding:'withholding',retention:'retention',ssk:'ssk',tax:'tax',otherPct:'otherPct',advance:'advance',fixedCut:'fixedCut'};
  Object.entries(map).forEach(([id,key])=>{if(saved[key]!==undefined)$(id).value=saved[key]});
  calc();
