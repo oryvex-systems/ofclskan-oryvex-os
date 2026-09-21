@@ -288,3 +288,163 @@
   }
 
 })();
+
+window.addEventListener('oryvex:approx-import', async (ev) => {
+  try {
+    const detail = ev.detail || {};
+    const rows = (detail.rows || []).filter(x => x.type === 'item');
+
+    if (!rows.length) {
+      alert('Aktarılacak maliyet kalemi bulunamadı.');
+      return;
+    }
+
+    const { data: { session }, error: sessionError } = await sb.auth.getSession();
+
+    if (sessionError || !session) {
+      alert('Kalıcı kayıt için yetkili oturum gerekir. Excel okuma ve önizleme çalışıyor.');
+      return;
+    }
+
+    const { data: member, error: memberError } = await sb
+      .from('santiye_company_members')
+      .select('company_id')
+      .eq('user_id', session.user.id)
+      .eq('active', true)
+      .limit(1)
+      .maybeSingle();
+
+    if (memberError || !member?.company_id) {
+      throw new Error(memberError?.message || 'Aktif şirket üyeliği bulunamadı.');
+    }
+
+    const companyId = member.company_id;
+
+    const { data: projects, error: projectError } = await sb
+      .from('santiye_projects')
+      .select('id,name')
+      .eq('company_id', companyId)
+      .order('created_at', { ascending: false });
+
+    if (projectError) throw projectError;
+
+    if (!projects?.length) {
+      alert('Aktarım için önce bir proje oluşturulmalı.');
+      return;
+    }
+
+    const projectText = projects
+      .map((p, i) => `${i + 1}. ${p.name}`)
+      .join('\n');
+
+    const choice = prompt(
+      `Excel hangi projeye aktarılsın?\n\n${projectText}\n\nProje numarasını yaz:`,
+      '1'
+    );
+
+    if (!choice) return;
+
+    const project = projects[Number(choice) - 1];
+
+    if (!project) {
+      alert('Geçersiz proje seçimi.');
+      return;
+    }
+
+    const { data: revisions, error: revListError } = await sb
+      .from('santiye_estimate_revisions')
+      .select('revision_no')
+      .eq('company_id', companyId)
+      .eq('project_id', project.id)
+      .order('revision_no', { ascending: false })
+      .limit(1);
+
+    if (revListError) throw revListError;
+
+    const nextRevision =
+      revisions?.length
+        ? Number(revisions[0].revision_no) + 1
+        : 0;
+
+    const sourceKey =
+      `${project.id}|${detail.sheet}|${rows.length}|` +
+      rows.slice(0, 5).map(x => `${x.poz_no}:${x.tanim}`).join('|');
+
+    const duplicateCheck = localStorage.getItem('oryvex:last-estimate-import');
+
+    if (duplicateCheck === sourceKey) {
+      const again = confirm(
+        'Bu Excel sayfası az önce aktarılmış görünüyor. Yeniden Rev.' +
+        nextRevision +
+        ' olarak aktarılsın mı?'
+      );
+
+      if (!again) return;
+    }
+
+    const { data: revision, error: revisionError } = await sb
+      .from('santiye_estimate_revisions')
+      .insert({
+        company_id: companyId,
+        project_id: project.id,
+        revision_no: nextRevision,
+        title: `${detail.sheet || 'Excel'} - Rev.${nextRevision}`,
+        note: `Excel doküman aktarımı: ${detail.sheet || 'Bilinmeyen sayfa'}`,
+        status: 'draft',
+        created_by: session.user.id
+      })
+      .select('id')
+      .single();
+
+    if (revisionError) throw revisionError;
+
+    const items = rows.map(x => ({
+      revision_id: revision.id,
+      measurement_id: null,
+      item_code: x.poz_no || null,
+      item_name: x.tanim,
+      unit: x.birim || null,
+      base_quantity: Number(x.miktar || 0),
+      revised_quantity: Number(x.miktar || 0),
+      base_unit_price: Number(x.birim_fiyat || 0),
+      revised_unit_price: Number(x.birim_fiyat || 0),
+      delta_amount: 0
+    }));
+
+    const batchSize = 250;
+
+    for (let i = 0; i < items.length; i += batchSize) {
+      const batch = items.slice(i, i + batchSize);
+
+      const { error: itemError } = await sb
+        .from('santiye_estimate_revision_items')
+        .insert(batch);
+
+      if (itemError) {
+        throw itemError;
+      }
+    }
+
+    localStorage.setItem('oryvex:last-estimate-import', sourceKey);
+
+    const total = rows.reduce(
+      (sum, x) => sum + Number(x.tutar || 0),
+      0
+    );
+
+    alert(
+      `Aktarım tamamlandı.\n\n` +
+      `Proje: ${project.name}\n` +
+      `Revizyon: Rev.${nextRevision}\n` +
+      `Kalem: ${rows.length}\n` +
+      `Toplam: ${total.toLocaleString('tr-TR', {
+        style: 'currency',
+        currency: 'TRY'
+      })}`
+    );
+
+  } catch (err) {
+    console.error('ORYVEX Excel aktarım hatası:', err);
+    alert('Aktarım hatası: ' + (err?.message || err));
+  }
+});
