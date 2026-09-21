@@ -1,1 +1,139 @@
-<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ORYVEX ŞANTİYE OS · İş Programı</title><meta http-equiv="refresh" content="0;url=modul.html?m=isler"><script>location.replace('modul.html?m=isler')</script></head><body></body></html>
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ORYVEX Şantiye OS | 12 Aylık İş Programı</title>
+<style>
+body{font-family:Arial,sans-serif;margin:0;background:#f5f6f8;color:#17202a}
+main{max-width:1450px;margin:auto;padding:24px}
+.card{background:#fff;border:1px solid #ddd;border-radius:14px;padding:18px;margin-bottom:16px;overflow:auto}
+table{border-collapse:collapse;width:100%;min-width:1250px}
+th,td{border-bottom:1px solid #ddd;padding:8px;text-align:right}
+th:first-child,td:first-child{text-align:left}
+input{width:64px;padding:7px;border:1px solid #ccc;border-radius:6px}
+.ok{color:#067647;font-weight:700}.warn{color:#b42318;font-weight:700}
+</style>
+</head>
+<body>
+<main>
+<p><a href="index.html">← Operasyon Merkezi</a></p>
+<h1>12 Aylık İş Programı</h1>
+
+<section class="card">
+<table>
+<thead><tr id="head"><th>İş Kalemi</th><th>Bedel</th></tr></thead>
+<tbody id="rows"></tbody>
+</table>
+</section>
+
+<section class="card">
+<div id="summary"></div>
+</section>
+</main>
+
+<script>
+const money=v=>new Intl.NumberFormat('tr-TR',{style:'currency',currency:'TRY'}).format(v);
+
+let works=[];
+try{
+  works=JSON.parse(localStorage.getItem('oryvex_core_pursantaj')||'[]');
+}catch(e){
+  works=[];
+}
+
+let saved={};
+try{
+  saved=JSON.parse(localStorage.getItem('oryvex_work_plan')||'{}');
+}catch(e){
+  saved={};
+}
+
+const head=document.getElementById('head');
+for(let m=1;m<=12;m++){
+  head.insertAdjacentHTML('beforeend','<th>Ay '+m+' %</th>');
+}
+head.insertAdjacentHTML(
+  'beforeend',
+  '<th>Plan %</th><th>Gerçek %</th><th>Plan Tutar</th><th>Gerçek Hakediş</th><th>Sapma</th>'
+);
+
+const rows=document.getElementById('rows');
+
+works.forEach((w,i)=>{
+  const name=w.name||w.description||w.item||('İş Kalemi '+(i+1));
+  const amount=Number(w.amount||w.total||w.value||0);
+  const actual=Number(
+    w.cumulative_progress_percent||
+    w.progress_percent||
+    w.progress||0
+  );
+
+  let html='<tr><td>'+name+'</td><td>'+money(amount)+'</td>';
+
+  for(let m=1;m<=12;m++){
+    const key=i+'-'+m;
+    html+='<td><input type="number" min="0" max="100" step=".01" value="'+Number(saved[key]||0)+'" data-key="'+key+'" data-row="'+i+'"></td>';
+  }
+
+  html+='<td id="plan-'+i+'">0%</td>';
+  html+='<td>'+actual.toFixed(2)+'%</td>';
+  html+='<td id="planAmount-'+i+'">'+money(0)+'</td>';
+  html+='<td>'+money(amount*actual/100)+'</td>';
+  html+='<td id="variance-'+i+'">'+money(0)+'</td></tr>';
+
+  rows.insertAdjacentHTML('beforeend',html);
+});
+
+function recalc(){
+  const data={};
+  let valid=true;
+  let plannedValue=0;
+  let actualValue=0;
+
+  works.forEach((w,i)=>{
+    const amount=Number(w.amount||w.total||w.value||0);
+    const actual=Number(
+      w.cumulative_progress_percent||
+      w.progress_percent||
+      w.progress||0
+    );
+
+    let plan=0;
+
+    document.querySelectorAll('input[data-row="'+i+'"]').forEach(el=>{
+      const v=Number(el.value||0);
+      data[el.dataset.key]=v;
+      plan+=v;
+    });
+
+    const planAmount=amount*plan/100;
+    const earned=amount*actual/100;
+
+    plannedValue+=planAmount;
+    actualValue+=earned;
+
+    const pc=document.getElementById('plan-'+i);
+    pc.textContent=plan.toFixed(2)+'%';
+    pc.className=Math.abs(plan-100)<0.01?'ok':'warn';
+
+    document.getElementById('planAmount-'+i).textContent=money(planAmount);
+    document.getElementById('variance-'+i).textContent=money(earned-planAmount);
+
+    if(Math.abs(plan-100)>=0.01) valid=false;
+  });
+
+  localStorage.setItem('oryvex_work_plan',JSON.stringify(data));
+
+  document.getElementById('summary').innerHTML=
+    '<b>'+(valid?'İş programı kontrolü uygun.':'Planlama devam ediyor; kırmızı satırlar %100 olmalı.')+'</b>'+
+    '<br>Planlanan toplam: '+money(plannedValue)+
+    '<br>Gerçekleşen hakediş: '+money(actualValue)+
+    '<br>Plan-Gerçek farkı: '+money(actualValue-plannedValue);
+}
+
+document.addEventListener('input',recalc);
+recalc();
+</script>
+</body>
+</html>
