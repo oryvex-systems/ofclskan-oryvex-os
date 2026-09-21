@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ORYVEX Şantiye OS | Taşeron Hakedişleri</title>
+<style>
+body{font-family:Arial,sans-serif;margin:0;background:#f5f6f8;color:#17202a}
+main{max-width:1200px;margin:auto;padding:24px}
+.card{background:#fff;border:1px solid #ddd;border-radius:14px;padding:18px;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+label{font-size:13px;font-weight:700}
+input,select{width:100%;box-sizing:border-box;padding:10px;margin-top:6px;border:1px solid #ccc;border-radius:8px}
+button{padding:11px 16px;border:0;border-radius:8px;cursor:pointer}
+.kpi{font-size:22px;font-weight:800}
+.warn{color:#b42318;font-weight:700}
+.ok{color:#067647;font-weight:700}
+a{color:inherit}
+</style>
+</head>
+<body>
+<main>
+<p><a href="index.html">← Operasyon Merkezi</a></p>
+<h1>Taşeron Hakedişleri</h1>
+
+<section class="card">
+<div class="grid">
+<label>Taşeron<input id="name"></label>
+<label>Sözleşme Bedeli<input id="contract" type="number" value="0"></label>
+<label>İşveren Karşılık Bedeli<input id="employer" type="number" value="0"></label>
+<label>Saha / İşveren İlerleme %<input id="fieldPct" type="number" step=".01" value="0"></label>
+<label>Taşeron Bu Dönem %<input id="periodPct" type="number" step=".01" value="0"></label>
+<label>Taşeron Kümülatif %<input id="cumPct" type="number" step=".01" value="0"></label>
+<label>KDV %<input id="vat" type="number" step=".01" value="20"></label>
+<label>KDV Tevkifat %<input id="withholding" type="number" step=".01" value="0"></label>
+<label>Teminat %<input id="retention" type="number" step=".01" value="5"></label>
+<label>SGK / SSK %<input id="ssk" type="number" step=".01" value="0"></label>
+<label>Vergi / Stopaj %<input id="tax" type="number" step=".01" value="0"></label>
+<label>Diğer Kesinti %<input id="otherPct" type="number" step=".01" value="0"></label>
+<label>Avans Mahsubu<input id="advance" type="number" value="0"></label>
+<label>Diğer Sabit Kesinti<input id="fixedCut" type="number" value="0"></label>
+</div>
+<p><button onclick="calc()">Hesapla ve Kaydet</button></p>
+<div id="warning"></div>
+</section>
+
+<section class="grid">
+<div class="card"><div>İşveren Hakediş Karşılığı</div><div class="kpi" id="employerEarned">₺0</div></div>
+<div class="card"><div>Taşeron Brüt + KDV</div><div class="kpi" id="gross">₺0</div></div>
+<div class="card"><div>Toplam Kesinti</div><div class="kpi" id="cuts">₺0</div></div>
+<div class="card"><div>Taşeron Net Ödeme</div><div class="kpi" id="net">₺0</div></div>
+<div class="card"><div>Brüt İş Marjı</div><div class="kpi" id="margin">₺0</div></div>
+<div class="card"><div>Nakit Farkı</div><div class="kpi" id="cashGap">₺0</div></div>
+</section>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+const n=id=>Number($(id).value||0);
+const money=v=>new Intl.NumberFormat('tr-TR',{style:'currency',currency:'TRY'}).format(v);
+
+function calc(){
+ const field=n('fieldPct'), period=n('periodPct'), cum=n('cumPct');
+ const employerBase=n('employer')*field/100;
+ const subBase=n('contract')*period/100;
+ const vat=subBase*n('vat')/100;
+ const vatWith=vat*n('withholding')/100;
+ const retention=subBase*n('retention')/100;
+ const ssk=subBase*n('ssk')/100;
+ const tax=subBase*n('tax')/100;
+ const other=subBase*n('otherPct')/100;
+ const cuts=vatWith+retention+ssk+tax+other+n('advance')+n('fixedCut');
+ const gross=subBase+vat;
+ const net=gross-cuts;
+ const margin=employerBase-subBase;
+ const cashGap=employerBase-net;
+
+ $('employerEarned').textContent=money(employerBase);
+ $('gross').textContent=money(gross);
+ $('cuts').textContent=money(cuts);
+ $('net').textContent=money(net);
+ $('margin').textContent=money(margin);
+ $('cashGap').textContent=money(cashGap);
+
+ $('warning').innerHTML=cum>field
+ ? '<p class="warn">UYARI: Taşeron kümülatif ilerlemesi saha/işveren ilerlemesini aşıyor.</p>'
+ : '<p class="ok">İlerleme kontrolü uygun.</p>';
+
+ localStorage.setItem('oryvex_subcontract_payments',JSON.stringify({
+   subcontractor:$('name').value,
+   contract:n('contract'),employer:n('employer'),
+   fieldPct:field,periodPct:period,cumPct:cum,
+   vat:n('vat'),withholding:n('withholding'),
+   retention:n('retention'),ssk:n('ssk'),tax:n('tax'),
+   otherPct:n('otherPct'),advance:n('advance'),fixedCut:n('fixedCut'),
+   employerEarned,subBase,gross,cuts,net,margin,cashGap,
+   updatedAt:new Date().toISOString()
+ }));
+}
+
+const saved=JSON.parse(localStorage.getItem('oryvex_subcontract_payments')||'null');
+if(saved){
+ const map={name:'subcontractor',contract:'contract',employer:'employer',fieldPct:'fieldPct',periodPct:'periodPct',cumPct:'cumPct',vat:'vat',withholding:'withholding',retention:'retention',ssk:'ssk',tax:'tax',otherPct:'otherPct',advance:'advance',fixedCut:'fixedCut'};
+ Object.entries(map).forEach(([id,key])=>{if(saved[key]!==undefined)$(id).value=saved[key]});
+ calc();
+}
+</script>
+</body>
+</html>
