@@ -302,7 +302,43 @@ window.addEventListener('oryvex:approx-import', async (ev) => {
     const { data: { session }, error: sessionError } = await sb.auth.getSession();
 
     if (sessionError || !session) {
-      alert('Kalıcı kayıt için yetkili oturum gerekir. Excel okuma ve önizleme çalışıyor.');
+      const localRows = rows.map(x => ({
+        item_code: x.poz_no || '',
+        item_name: x.tanim || '',
+        unit: x.birim || '',
+        quantity: Number(x.miktar || 0),
+        unit_price: Number(x.birim_fiyat || 0),
+        amount: Number(x.tutar || 0),
+        price_status: x.fiyat_durumu || ''
+      }));
+
+      const draft = {
+        id: 'LOCAL-' + Date.now(),
+        revision_no: 0,
+        title: (detail.sheet || 'Excel') + ' - Rev.0',
+        sheet: detail.sheet || '',
+        created_at: new Date().toISOString(),
+        rows: localRows,
+        total: localRows.reduce((sum, x) => sum + Number(x.amount || 0), 0),
+        sync_status: 'pending'
+      };
+
+      localStorage.setItem('oryvex:estimate:draft', JSON.stringify(draft));
+
+      alert(
+        'Aktarım tamamlandı.\n\n' +
+        'Revizyon: Rev.0\n' +
+        'Kalem: ' + localRows.length + '\n' +
+        'Toplam: ' + draft.total.toLocaleString('tr-TR', {
+          style: 'currency',
+          currency: 'TRY'
+        }) +
+        '\n\nSupabase senkronizasyonu yetkili oturum açıldığında yapılacak.'
+      );
+
+      window.dispatchEvent(
+        new CustomEvent('oryvex:estimate-local-import', { detail: draft })
+      );
       return;
     }
 
