@@ -32,4 +32,39 @@ $('subGross').textContent=money(subBase+subVatA);
 $('subCuts').textContent=money(subCutsA);
 $('subNet').textContent=money(subNetA);
 $('margin').textContent=money(netA-subNetA);
-cover.innerHTML=`<b>${$('no').value} No'lu Hakediş · ${$('period').value||'Dönem'}</b><br>Sözleşme: ${money(contract)} · Bu dönem ilerleme: %${prog.toFixed(2)} · KDV hariç: ${money(base)} · KDV: ${money(vatA)} · Kesintiler: ${money(totalCuts)} · <b>Net: ${money(netA)}</b><br>Önceki hakediş: ${money(num('previous'))} · Avans: ${money(num('advance'))} · Önceki ödeme: ${money(num('previousPaid'))}`;const ids=['no','period','contract','previous','advance','advanceCut','otherCut','previousPaid','vat','withholding','retention','ssk','tax','otherPct','progress','cumProgress'],o={};ids.forEach(x=>o[x]=$(x).value);localStorage.setItem('oryvex_hakedis_settings',JSON.stringify(o));renderGreen()}calc.onclick=calculate;renderGreen();calculate();</script></body></html>
+cover.innerHTML=`<b>${$('no').value} No'lu Hakediş · ${$('period').value||'Dönem'}</b><br>Sözleşme: ${money(contract)} · Bu dönem ilerleme: %${prog.toFixed(2)} · KDV hariç: ${money(base)} · KDV: ${money(vatA)} · Kesintiler: ${money(totalCuts)} · <b>Net: ${money(netA)}</b><br>Önceki hakediş: ${money(num('previous'))} · Avans: ${money(num('advance'))} · Önceki ödeme: ${money(num('previousPaid'))}`;const ids=['no','period','contract','previous','advance','advanceCut','otherCut','previousPaid','vat','withholding','retention','ssk','tax','otherPct','progress','cumProgress'],o={};ids.forEach(x=>o[x]=$(x).value);localStorage.setItem('oryvex_hakedis_settings',JSON.stringify(o));renderGreen()}calc.onclick=calculate;renderGreen();calculate();</script>
+<script>
+function loadFieldProgress(){
+  let rows=[];
+  try{
+    rows=JSON.parse(localStorage.getItem('oryvex_field_progress')||localStorage.getItem('santiye_location_progress')||'[]');
+  }catch(e){ rows=[]; }
+
+  if(!Array.isArray(rows) || !rows.length) return;
+
+  let earned=0, weighted=0, amount=0;
+
+  rows.forEach(r=>{
+    const a=Number(r.work_amount||0);
+    const pct=Number(r.cumulative_progress_percent||r.percent||0);
+    const e=Number(r.cumulative_earned_value||a*pct/100);
+    earned+=e;
+    amount+=a;
+    weighted+=a*pct;
+  });
+
+  const cumulative=amount>0 ? weighted/amount : 0;
+
+  const cum=document.getElementById('cumulativeProgress')||
+            document.getElementById('cumProgress')||
+            document.getElementById('cumPct');
+
+  if(cum) cum.value=cumulative.toFixed(2);
+
+  window.oryvexFieldEarned=earned;
+  window.oryvexFieldProgress=cumulative;
+}
+
+window.addEventListener('DOMContentLoaded',loadFieldProgress);
+</script>
+</body></html>
