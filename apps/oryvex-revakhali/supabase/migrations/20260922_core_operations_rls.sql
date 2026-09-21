@@ -1,3 +1,8 @@
+
+-- santiye_subcontractor_payments mevcut rol bazli subpayments_* RLS
+-- politikalarini korur. Company-membership genel policy bu tabloya
+-- uygulanmaz; mevcut owner/project_manager/accounting yetki modeli devam eder.
+
 -- ORYVEX ŞANTİYE OS
 -- Company membership tabanlı RLS
 -- Kullanıcı yalnızca aktif üyesi olduğu company_id verilerine erişebilir.
@@ -28,7 +33,7 @@ begin
   foreach t in array array[
     'santiye_work_program',
     'santiye_employer_payments',
-    'santiye_subcontractor_payments',
+
     'santiye_finance_snapshots'
   ]
   loop
