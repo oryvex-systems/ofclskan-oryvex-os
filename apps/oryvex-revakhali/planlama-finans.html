@@ -13,4 +13,52 @@ function render(){let amount=0,weighted=0,planWeighted=0;body.innerHTML=rows.map
 const totalPct=amount/REF*100,earnedBase=REF*weighted/100,vat=earnedBase*.20,gross=earnedBase+vat,retention=earnedBase*.05,earnedVal=gross-retention;pct.textContent='%'+totalPct.toFixed(3);real.textContent='%'+weighted.toFixed(2);earned.textContent=fmt(earnedVal);msg.innerHTML=totalPct>100.01?'<span class="warn">Pursantaj %100 üzerinde. Tutarları kontrol et.</span>':totalPct<99.99?'<span class="warn">Henüz dağıtılmamış pursantaj: %'+(100-totalPct).toFixed(3)+'</span>':'<span class="ok">Pursantaj dengede.</span>';
 basePay.textContent=fmt(earnedBase);vatPay.textContent=fmt(vat);retPay.textContent=fmt(retention);netPay.textContent=fmt(earnedVal);compare.innerHTML=rows.map(x=>{const gap=Math.max(0,x.plan-x.real),gapMoney=x.amount*gap/100,earn=x.amount*x.real/100;return `<tr><td>${x.name}</td><td><div class="bar"><i style="width:${Math.min(100,x.real)}%"></i></div><small>Plan %${x.plan} · Gerçek %${x.real}</small></td><td>%${gap.toFixed(1)}</td><td>${fmt(gapMoney)}</td><td>${fmt(earn)}</td><td class="${gap>0?'warn':'ok'}">${gap>0?'İmalat ihtiyacı':'Plana uygun'}</td></tr>`}).join('')}
 add.onclick=()=>{rows.push({name:'Yeni İmalat',amount:0,plan:0,real:0});save()};render();
-</script></body></html>
+</script>
+<script id="oryvex_payment_finance_bridge">
+function ocxFinanceSync(){
+  let field=[];
+  let subcontract={};
+
+  try{
+    field=JSON.parse(
+      localStorage.getItem('oryvex_field_progress')||
+      localStorage.getItem('santiye_location_progress')||
+      '[]'
+    );
+  }catch(e){field=[]}
+
+  try{
+    subcontract=JSON.parse(
+      localStorage.getItem('oryvex_subcontract_payments')||'{}'
+    );
+  }catch(e){subcontract={}}
+
+  if(!Array.isArray(field)) field=[];
+
+  let employerEarned=0;
+  field.forEach(r=>{
+    employerEarned+=Number(
+      r.cumulative_earned_value||
+      (Number(r.work_amount||0)*Number(r.cumulative_progress_percent||r.percent||0)/100)
+    );
+  });
+
+  const subcontractNet=Number(subcontract.net||0);
+  const grossMargin=employerEarned-Number(subcontract.subBase||0);
+  const cashDifference=employerEarned-subcontractNet;
+
+  const finance={
+    employer_earned:employerEarned,
+    subcontract_net:subcontractNet,
+    gross_margin:grossMargin,
+    cash_difference:cashDifference,
+    updated_at:new Date().toISOString()
+  };
+
+  localStorage.setItem('oryvex_finance_snapshot',JSON.stringify(finance));
+  window.oryvexFinanceSnapshot=finance;
+}
+
+window.addEventListener('DOMContentLoaded',ocxFinanceSync);
+</script>
+</body></html>
