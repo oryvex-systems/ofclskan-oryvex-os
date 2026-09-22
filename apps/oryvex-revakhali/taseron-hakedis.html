@@ -121,30 +121,46 @@ function calc(save=true){
  ? '<p class="warn">UYARI: Taşeron kümülatif ilerlemesi saha/işveren ilerlemesini aşıyor.</p>'
  : '<p class="ok">İlerleme kontrolü uygun.</p>';
 
- if(save) localStorage.setItem('oryvex_subcontract_payments',JSON.stringify({
-   subcontractor:$('name').value,
-   workItemIndex:$('workItem').value,
-   workItemName:$('workItem').selectedOptions[0]?.textContent||'',
-
-   contract:n('contract'),employer:n('employer'),
-   fieldPct:field,periodPct:period,cumPct:cum,
-   vat:n('vat'),withholding:n('withholding'),
-   retention:n('retention'),ssk:n('ssk'),tax:n('tax'),
-   otherPct:n('otherPct'),advance:n('advance'),fixedCut:n('fixedCut'),
-   employerEarned,subBase,gross,cuts,net,margin,cashGap,
-   updatedAt:new Date().toISOString()
- }));
+ if(save){
+   const payment={
+     periodNo:Math.max(1,Math.trunc(n('periodNo')||1)),
+     subcontractor:$('name').value,
+     workItemIndex:$('workItem').value,
+     workItemName:$('workItem').selectedOptions[0]?.textContent||'',
+     contract:n('contract'),employer:n('employer'),
+     fieldPct:field,periodPct:period,cumPct:cum,
+     vat:n('vat'),withholding:n('withholding'),
+     retention:n('retention'),ssk:n('ssk'),tax:n('tax'),
+     otherPct:n('otherPct'),advance:n('advance'),fixedCut:n('fixedCut'),
+     employerEarned,subBase,gross,cuts,net,margin,cashGap,
+     updatedAt:new Date().toISOString()
+   };
+   let payments=[];
+   try{
+     const old=JSON.parse(localStorage.getItem('oryvex_subcontract_payments')||'[]');
+     payments=Array.isArray(old)?old:(old&&typeof old==='object'?[old]:[]);
+   }catch(e){payments=[]}
+   const key=x=>String(x.subcontractor||'')+'|'+String(x.workItemIndex||'')+'|'+String(x.periodNo||1);
+   const i=payments.findIndex(x=>key(x)===key(payment));
+   if(i>=0) payments[i]=payment; else payments.push(payment);
+   localStorage.setItem('oryvex_subcontract_payments',JSON.stringify(payments));
+ };
 }
 
 loadPursantaj();
 $('workItem').addEventListener('change',syncWork);
 
-const saved=JSON.parse(localStorage.getItem('oryvex_subcontract_payments')||'null');
+let saved=null;
+try{
+ const raw=JSON.parse(localStorage.getItem('oryvex_subcontract_payments')||'null');
+ saved=Array.isArray(raw)?raw[raw.length-1]:raw;
+}catch(e){saved=null}
 if(saved){
  if(saved.workItemIndex!==undefined) $('workItem').value=saved.workItemIndex;
+ if(saved.periodNo!==undefined) $('periodNo').value=saved.periodNo;
  const map={name:'subcontractor',contract:'contract',employer:'employer',fieldPct:'fieldPct',periodPct:'periodPct',cumPct:'cumPct',vat:'vat',withholding:'withholding',retention:'retention',ssk:'ssk',tax:'tax',otherPct:'otherPct',advance:'advance',fixedCut:'fixedCut'};
  Object.entries(map).forEach(([id,key])=>{if(saved[key]!==undefined)$(id).value=saved[key]});
- calc();
+ calc(false);
 }
 </script>
 <script src="global-nav.js"></script><script src="taseron-hakedis-db.js"></script></body>

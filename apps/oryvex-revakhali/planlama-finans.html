@@ -43,13 +43,16 @@ function ocxFinanceSync(){
     );
   });
 
-  const subcontractNet=Number(subcontract.net||0);
-  const grossMargin=employerEarned-Number(subcontract.subBase||0);
-  const cashDifference=employerEarned-subcontractNet;
-
   let hakedis={};
   try{hakedis=JSON.parse(localStorage.getItem('oryvex_hakedis_settings')||'{}')}catch(e){hakedis={}}
   const paymentNo=Math.max(1,Math.trunc(Number(hakedis.no)||1));
+
+  const subcontractRows=Array.isArray(subcontract)?subcontract:(subcontract&&typeof subcontract==='object'?[subcontract]:[]);
+  const periodSubcontracts=subcontractRows.filter(x=>Math.max(1,Math.trunc(Number(x.periodNo)||1))===paymentNo);
+  const subcontractNet=periodSubcontracts.reduce((t,x)=>t+Number(x.net||0),0);
+  const subcontractBase=periodSubcontracts.reduce((t,x)=>t+Number(x.subBase||0),0);
+  const grossMargin=employerEarned-subcontractBase;
+  const cashDifference=employerEarned-subcontractNet;
 
   const finance={
     payment_no:paymentNo,
