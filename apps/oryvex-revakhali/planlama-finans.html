@@ -47,7 +47,12 @@ function ocxFinanceSync(){
   const grossMargin=employerEarned-Number(subcontract.subBase||0);
   const cashDifference=employerEarned-subcontractNet;
 
+  let hakedis={};
+  try{hakedis=JSON.parse(localStorage.getItem('oryvex_hakedis_settings')||'{}')}catch(e){hakedis={}}
+  const paymentNo=Math.max(1,Math.trunc(Number(hakedis.no)||1));
+
   const finance={
+    payment_no:paymentNo,
     employer_earned:employerEarned,
     subcontract_net:subcontractNet,
     gross_margin:grossMargin,
