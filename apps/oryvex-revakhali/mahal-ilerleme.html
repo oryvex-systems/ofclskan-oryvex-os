@@ -21,4 +21,141 @@ const periodEarned=workAmount*(periodPct/100);
 const cumulativeEarned=workAmount*(cumulativePct/100);
 const row={work_amount:workAmount,period_progress_percent:periodPct,period_earned_value:periodEarned,cumulative_earned_value:cumulativeEarned,project_id:$('project').value,item_name:item,unit:$('unit').value.trim()||null,planned_quantity:planned,previous_quantity:previous,today_quantity:today,progress_percent:calculatedPercent,status:calculatedPercent>=100?'completed':$('status').value,note:$('note').value.trim()||null,location_name:locName};if(profile.guest||!profile.company_id){const a=JSON.parse(localStorage.getItem('oryvex_progress_demo')||'[]');a.unshift({...row,id:crypto.randomUUID(),created_at:new Date().toISOString()});localStorage.setItem('oryvex_progress_demo',JSON.stringify(a));$('msg').textContent='Misafir modunda bu cihazda kaydedildi.';render(a);return}let {data:loc}=await sb.from('santiye_locations').select('id').eq('project_id',row.project_id).eq('name',locName).maybeSingle();if(!loc){const ins=await sb.from('santiye_locations').insert({company_id:profile.company_id,project_id:row.project_id,name:locName,level_type:'mahal'}).select('id').single();if(ins.error){$('msg').textContent=ins.error.message;return}loc=ins.data}delete row.location_name;row.location_id=loc.id;row.company_id=profile.company_id;localStorage.setItem('oryvex_field_progress',JSON.stringify([...(JSON.parse(localStorage.getItem('oryvex_field_progress')||'[]')),row]));
 localStorage.setItem('santiye_location_progress',localStorage.getItem('oryvex_field_progress'));
-const {error}=await sb.from('santiye_location_progress').insert(row);$('msg').textContent=error?error.message:'Mahal ilerlemesi kaydedildi.';if(!error)load()};loadPursantaj();boot()</script></body></html>
+const {error}=await sb.from('santiye_location_progress').insert(row);$('msg').textContent=error?error.message:'Mahal ilerlemesi kaydedildi.';if(!error)load()};loadPursantaj();boot()</script>
+<script>
+(()=>{
+const num=v=>{
+  const n=Number(String(v??0).replace(",","."));
+  return Number.isFinite(n)?n:0;
+};
+
+const clamp=(n,min,max)=>Math.min(max,Math.max(min,n));
+
+window.ORYVEX_FIELD_CALC={
+  calculate(input={}){
+    const planned=Math.max(0,num(
+      input.planned_quantity ??
+      input.plannedQty ??
+      input.quantity
+    ));
+
+    const previous=Math.max(0,num(
+      input.previous_quantity ??
+      input.previousQty
+    ));
+
+    const today=Math.max(0,num(
+      input.today_quantity ??
+      input.todayQty
+    ));
+
+    const rawCumulative=previous+today;
+    const overrun=planned>0 && rawCumulative>planned;
+
+    const progress=planned>0
+      ? clamp((rawCumulative/planned)*100,0,100)
+      : 0;
+
+    const pursantaj=Math.max(0,num(
+      input.pursantaj_percent ??
+      input.pursantaj ??
+      input.weight
+    ));
+
+    const weightedProgress=(progress*pursantaj)/100;
+
+    return {
+      planned_quantity:planned,
+      previous_quantity:previous,
+      today_quantity:today,
+      cumulative_quantity:rawCumulative,
+      progress_percent:Number(progress.toFixed(4)),
+      pursantaj_percent:pursantaj,
+      weighted_progress:Number(weightedProgress.toFixed(4)),
+      overrun,
+      overrun_quantity:overrun
+        ? Number((rawCumulative-planned).toFixed(4))
+        : 0
+    };
+  },
+
+  normalizeRows(rows=[]){
+    return (Array.isArray(rows)?rows:[]).map(row=>{
+      const calc=this.calculate(row);
+      return {...row,...calc};
+    });
+  },
+
+  totals(rows=[]){
+    const normalized=this.normalizeRows(rows);
+
+    const pursantajTotal=normalized.reduce(
+      (t,r)=>t+num(r.pursantaj_percent),0
+    );
+
+    const earnedWeight=normalized.reduce(
+      (t,r)=>t+num(r.weighted_progress),0
+    );
+
+    return {
+      rows:normalized,
+      pursantaj_total:Number(pursantajTotal.toFixed(4)),
+      physical_progress:Number(earnedWeight.toFixed(4)),
+      overrun_count:normalized.filter(r=>r.overrun).length
+    };
+  }
+};
+
+function bridgeExistingStorage(){
+  let rows=[];
+  try{
+    rows=JSON.parse(
+      localStorage.getItem("oryvex_field_progress")||
+      localStorage.getItem("santiye_location_progress")||
+      "[]"
+    );
+  }catch(e){
+    rows=[];
+  }
+
+  if(!Array.isArray(rows)) return;
+
+  const result=window.ORYVEX_FIELD_CALC.totals(rows);
+
+  localStorage.setItem(
+    "oryvex_field_progress",
+    JSON.stringify(result.rows)
+  );
+
+  localStorage.setItem(
+    "santiye_location_progress",
+    JSON.stringify(result.rows)
+  );
+
+  localStorage.setItem(
+    "oryvex_field_progress_summary",
+    JSON.stringify({
+      physical_progress:result.physical_progress,
+      pursantaj_total:result.pursantaj_total,
+      overrun_count:result.overrun_count,
+      updated_at:new Date().toISOString()
+    })
+  );
+
+  window.dispatchEvent(new CustomEvent(
+    "oryvex:field-progress-updated",
+    {detail:result}
+  ));
+}
+
+window.addEventListener("oryvex:field-progress-recalculate",
+  bridgeExistingStorage
+);
+
+document.addEventListener("DOMContentLoaded",
+  bridgeExistingStorage
+);
+})();
+</script>
+
+</body></html>
