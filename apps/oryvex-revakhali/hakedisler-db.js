@@ -11,7 +11,7 @@ const set=(id,v)=>{if(el(id)&&v!==null&&v!==undefined)el(id).value=v};
 set("no",x.payment_no);set("period",x.period_label);set("contract",x.contract_amount);set("progress",x.period_progress_percent);set("cumProgress",x.cumulative_progress_percent);
 set("vat",x.vat_percent);set("withholding",x.vat_withholding_percent);set("retention",x.retention_percent);set("ssk",x.ssk_percent);set("tax",x.tax_percent);set("otherPct",x.other_cut_percent);
 set("advanceCut",x.advance_offset);set("previousPaid",x.previous_payment);
-el("calc")?.click();
+if(typeof calc==="function") calc();
 }
 async function save(){if(!rt?.sb||!pid)return;
 const row={project_id:pid,company_id:rt.company_id,payment_no:Math.max(1,Math.trunc(num("no")||1)),period_label:el("period")?.value||"",contract_amount:num("contract"),period_progress_percent:num("progress"),cumulative_progress_percent:num("cumProgress"),gross_amount:num("base"),vat_percent:num("vat"),vat_withholding_percent:num("withholding"),retention_percent:num("retention"),ssk_percent:num("ssk"),tax_percent:num("tax"),other_cut_percent:num("otherPct"),advance_offset:num("advanceCut"),previous_payment:num("previousPaid"),net_amount:num("net"),status:"draft",updated_at:new Date().toISOString()};
