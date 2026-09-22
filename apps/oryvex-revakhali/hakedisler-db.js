@@ -1,7 +1,7 @@
 (()=>{
 let rt=null,pid=null;
 const el=id=>document.getElementById(id);
-const num=id=>Number(el(id)?.value||0);
+const num=id=>{const x=el(id);if(!x)return 0;const raw=(x.value!==undefined&&x.value!==""?x.value:x.textContent)||"0";const clean=String(raw).replace(/[₺\s]/g,"").replace(/\./g,"").replace(",",".").replace(/[^0-9.-]/g,"");return Number(clean)||0;};
 const projectId=()=>new URLSearchParams(location.search).get("id")||new URLSearchParams(location.search).get("project_id");
 async function start(r){if(!r?.sb||!r?.company_id)return;rt=r;pid=projectId();if(!pid){console.info("ORYVEX Hakediş: localStorage aktif");return;}await load();}
 async function load(){const q=await rt.sb.from("santiye_employer_payments").select("*").eq("project_id",pid).eq("company_id",rt.company_id).order("payment_no",{ascending:false}).limit(1);
