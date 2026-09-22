@@ -4,6 +4,7 @@ const el=id=>document.getElementById(id);
 const num=id=>Number(el(id)?.value||0);
 const projectId=()=>new URLSearchParams(location.search).get("id")||new URLSearchParams(location.search).get("project_id");
 async function start(r){if(!r?.sb||!r?.company_id)return;rt=r;pid=projectId();if(!pid){console.info("ORYVEX Hakediş: localStorage aktif");return;}await load();}
+async function load(){const q=await rt.sb.from("santiye_employer_payments").select("*").eq("project_id",pid).eq("company_id",rt.company_id).order("payment_no",{ascending:false}).limit(1);
 if(q.error){console.warn("ORYVEX Hakediş load",q.error);return;}
 const x=q.data?.[0];if(!x)return;
 const set=(id,v)=>{if(el(id)&&v!==null&&v!==undefined)el(id).value=v};
