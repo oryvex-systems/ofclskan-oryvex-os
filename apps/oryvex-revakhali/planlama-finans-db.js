@@ -6,5 +6,6 @@ async function save(){if(!rt?.sb||!pid)return;const f=finance();const day=new Da
 async function start(r){if(!r?.sb||!r?.company_id)return;rt=r;pid=projectId();if(!pid){console.info("ORYVEX Finans: proje seçilmedi, localStorage aktif");return;}setTimeout(save,500);}
 window.addEventListener("oryvex:ready",e=>start(e.detail),{once:true});
 window.addEventListener("storage",e=>{if(e.key==="oryvex_finance_snapshot")setTimeout(save,250);});
+window.addEventListener("oryvex:finance-updated",()=>setTimeout(save,100));
 if(window.ORYVEX)start(window.ORYVEX);
 })();
