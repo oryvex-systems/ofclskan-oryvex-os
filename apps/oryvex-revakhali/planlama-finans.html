@@ -3,6 +3,45 @@
 <section class="grid"><article class="card k"><span class="muted">Referans Bedel</span><b id="ref">₺175.000.000</b></article><article class="card k"><span class="muted">Pursantaj Toplamı</span><b id="pct">%0</b></article><article class="card k"><span class="muted">Gerçek Fiziki İlerleme</span><b id="real">%0</b></article><article class="card k"><span class="muted">Net Hakediş (KDV dahil - %5 teminat)</span><b id="earned">₺0</b></article></section>
 <section class="card"><div class="top"><div><h2>1 · Pursantaj / Mali Tablo</h2><div class="muted">Önce iş kalemlerini ve 175 M içindeki ağırlığını kur.</div></div><button class="btn" id="add">+ Kalem</button></div><div class="scroll"><table><thead><tr><th>İmalat</th><th>Tutar ₺</th><th>Pursantaj %</th><th>Plan %</th><th>Gerçek %</th><th>Hakediş Karşılığı</th><th>İhtiyaç / Kalan</th></tr></thead><tbody id="body"></tbody></table></div><p id="msg" class="muted"></p></section>
 <section class="card"><h2>2 · Hakediş Mali Akışı</h2><div class="grid"><article class="card k"><span class="muted">KDV Hariç Hakediş</span><b id="basePay">₺0</b></article><article class="card k"><span class="muted">%20 KDV</span><b id="vatPay">₺0</b></article><article class="card k"><span class="muted">%5 Teminat Kesintisi</span><b id="retPay">₺0</b></article><article class="card k"><span class="muted">Net Ödenecek</span><b id="netPay">₺0</b></article></div><h2>3 · İlerleme İhtiyaç & Hakediş Karşılaştırması</h2><div class="scroll"><table><thead><tr><th>İmalat</th><th>Plan-Gerçek</th><th>Geride %</th><th>Geride Tutar</th><th>Gerçek Hakediş</th><th>Durum</th></tr></thead><tbody id="compare"></tbody></table></div></section>
+
+<section id="financeTransactions" style="margin-top:24px">
+  <h2>Tahsilat / Ödeme Hareketleri</h2>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px">
+    <label>Hakediş No
+      <input id="financePaymentNo" type="number" min="1" step="1" value="1">
+    </label>
+    <label>İşlem Türü
+      <select id="financeEventType">
+        <option value="cash_in">İşveren Tahsilatı</option>
+        <option value="cash_out">Taşeron / Proje Ödemesi</option>
+      </select>
+    </label>
+    <label>Tarih
+      <input id="financeEventDate" type="date">
+    </label>
+    <label>Tutar
+      <input id="financeEventAmount" type="number" min="0" step="0.01" value="0">
+    </label>
+    <label style="grid-column:span 2">Açıklama
+      <input id="financeEventNote" type="text" placeholder="Tahsilat / ödeme açıklaması">
+    </label>
+  </div>
+  <div style="margin-top:12px">
+    <button id="financeEventSave" type="button">Hareketi Kaydet</button>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:16px">
+    <div><small>Dönem Tahsilatı</small><strong id="financeCollected">₺0</strong></div>
+    <div><small>Dönem Ödemesi</small><strong id="financePaid">₺0</strong></div>
+    <div><small>Nakit Bakiye</small><strong id="financeCashBalance">₺0</strong></div>
+  </div>
+  <div style="overflow:auto;margin-top:16px">
+    <table style="width:100%">
+      <thead><tr><th>Tarih</th><th>Hakediş</th><th>Tür</th><th>Açıklama</th><th>Tutar</th></tr></thead>
+      <tbody id="financeEventRows"></tbody>
+    </table>
+  </div>
+</section>
+
 </main><script>
 const REF=175000000,fmt=n=>new Intl.NumberFormat('tr-TR',{style:'currency',currency:'TRY',maximumFractionDigits:0}).format(+n||0);
 const defaults=['Hafriyat / Zemin','Kaba İnşaat','Duvar','Çatı / Kubbe / Minare','Yalıtım','Sıva / Alçı','Cephe / Doğrama','Zemin / Kaplama','Kalemişi / Tezyinat','Elektrik','Mekanik / Isıtma','Ses / Kamera / Zayıf Akım','Peyzaj / Çevre'];
@@ -70,4 +109,5 @@ function ocxFinanceSync(){
 
 window.addEventListener('DOMContentLoaded',ocxFinanceSync);
 </script>
-<script src="global-nav.js"></script><script src="planlama-finans-db.js"></script></body></html>
+<script src="global-nav.js"></script><script src="planlama-finans-db.js"></script><script src="finance-transactions.js"></script>
+</body></html>
