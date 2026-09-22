@@ -1,6 +1,6 @@
 const SUPABASE_URL="https://wdimzayfvtlrxljpsvza.supabase.co";
 const SUPABASE_KEY="sb_publishable_FZwX09JGrJt3Q9WXW3V1dQ_-g9aegh4";
-const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+/** @type {any} */\nconst supabaseClient=/** @type {any} */ (window).supabase;\nconst sb=supabaseClient.createClient(SUPABASE_URL,SUPABASE_KEY);
 const $=id=>document.getElementById(id);
 const folders=["01_PROJELER","02_TEKNIK_SARTNAMELER","03_MAHAL_LISTELERI","04_DETAY_PAFTALARI","05_METRAJ_KESIF","06_IS_PROGRAMI","07_ILERLEME_RAPORLARI","08_SANTIYE_FOTOGRAFLARI","09_TUTANAKLAR","10_PAYLASILAN_BELGELER"];
 const locations=["Tüm Mahaller","Temel","Bodrum","Harim","Mahfil","Kubbe","Minare 1","Minare 2","Cephe","Mekanik","Elektrik","Çevre Düzenleme","Cami Özel İmalatları"];
@@ -36,5 +36,5 @@ async function loadPortalData(){
  k[9][1]=docs.error?"—":String((docs.data||[]).length);k[9][2]=docs.error?"Metadata tablosu doğrulanmalı":"ŞANTİYE-M";
  renderKpis(k);$("latestStatus").textContent=last==="—"?"Veri bekleniyor.":`Son saha güncellemesi: ${last}`;
 }
-$("loginForm").onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget);$("loginMsg").textContent="Giriş yapılıyor...";try{const r=await fetch(SUPABASE_URL+"/functions/v1/santiye-username-login",{method:"POST",headers:{"Content-Type":"application/json",apikey:SUPABASE_KEY},body:JSON.stringify({username:f.get("username"),password:f.get("password")})});const j=await r.json();if(!r.ok||!j.session)throw new Error(j.error||"Giriş başarısız.");const {error}=await sb.auth.setSession({access_token:j.session.access_token,refresh_token:j.session.refresh_token});if(error)throw error;$("loginMsg").textContent="Giriş başarılı.";await loadPortalData()}catch(err){$("loginMsg").textContent=err instanceof Error?err.message:"Giriş yapılamadı."}};
+$("loginForm").onsubmit=async e=>{e.preventDefault();const form=/** @type {HTMLFormElement} */ (e.currentTarget);const f=new FormData(form);$("loginMsg").textContent="Giriş yapılıyor...";try{const r=await fetch(SUPABASE_URL+"/functions/v1/santiye-username-login",{method:"POST",headers:{"Content-Type":"application/json",apikey:SUPABASE_KEY},body:JSON.stringify({username:f.get("username"),password:f.get("password")})});const j=await r.json();if(!r.ok||!j.session)throw new Error(j.error||"Giriş başarısız.");const {error}=await sb.auth.setSession({access_token:j.session.access_token,refresh_token:j.session.refresh_token});if(error)throw error;$("loginMsg").textContent="Giriş başarılı.";await loadPortalData()}catch(err){$("loginMsg").textContent=err instanceof Error?err.message:"Giriş yapılamadı."}};
 renderStatic();route();loadPortalData().catch(console.warn);
