@@ -1,59 +1,37 @@
 <!doctype html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#07111f">
-<title>Taşpazar Camii · Şantiye Takip Portalı</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link rel="stylesheet" href="/styles.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#07182d">
+<title>Taşpazar Camii | Şantiye-M Portalı</title>
+<style>
+html,body{
+ margin:0;
+ width:100%;
+ height:100%;
+ background:#07182d;
+ overflow:hidden;
+}
+.hero{
+ position:fixed;
+ inset:0;
+ background-image:url("/assets/taspazar-hero.png");
+ background-repeat:no-repeat;
+ background-position:center center;
+ background-size:cover;
+}
+@media(max-width:800px){
+ .hero{
+   background-size:cover;
+   background-position:center center;
+ }
+}
+</style>
 </head>
 <body>
-<header class="topbar">
-  <div class="oryvex"><b>ORYVEX</b><span>YAPIYI YÖNET, GELECEĞİ İNŞA ET</span></div>
-  <div class="top-actions"><span>Şantiye-M Portalı</span><button class="lang">TR</button><button id="menuBtn" class="menu-btn" aria-label="Menü">☰</button></div>
-</header>
-<aside id="drawer" class="drawer" aria-hidden="true">
-  <div class="drawer-head"><b>TAŞPAZAR CAMİİ</b><button id="menuClose">×</button></div>
-  <nav id="nav">
-    <a href="#home">ANA SAYFA</a><a href="#monitor">İZLEME PANELİ</a><a href="#archive">PROJE & TEKNİK ARŞİV</a>
-    <a href="#documents">BELGELER</a><a href="#photos">ŞANTİYE FOTOĞRAFLARI</a><a href="#reports">İLERLEME RAPORLARI</a>
-    <a href="#status">GÜNCEL DURUM</a><a href="#sharing">PAYLAŞIM MERKEZİ</a><a href="#account">GİRİŞ / HESABIM</a>
-  </nav>
-</aside>
-<div id="backdrop" class="backdrop"></div>
-
-<main>
-<section id="home" class="hero view active">
-  <div class="hero-media" id="heroMedia" role="img" aria-label="Taşpazar Camii mimari görsel alanı">
-    <div class="asset-required">GERÇEK TAŞPAZAR CAMİİ MİMARİ GÖRSELİ BEKLENİYOR</div>
-  </div>
-  <div class="hero-copy"><p>AKSARAY</p><h1>TAŞPAZAR<br>CAMİİ</h1><h2>ŞANTİYE TAKİP PORTALI</h2><blockquote>“Geleceğe iz bırakan yapılar,<br>güvenle yükselir.”</blockquote></div>
-  <div class="institutions">
-    <div><strong>AKSARAY BELEDİYESİ</strong><span>İşveren / İdare</span></div>
-    <div><strong>DAMA</strong><span>DAMA YOL İNŞAAT A.Ş.</span><small>Gerçek DAMA logosu bekleniyor</small></div>
-    <div><strong>ORYVEX</strong><span>Dijital sistem altyapısı</span></div>
-  </div>
-</section>
-
-<section id="monitor" class="view shell">
-  <div class="section-title"><span>PROJE İZLEME</span><h2>Taşpazar Camii sağlık ve ilerleme görünümü</h2></div>
-  <div id="kpis" class="kpis"></div>
-  <article class="card project-info"><h3>Proje Bilgileri</h3>
-    <dl><dt>Proje</dt><dd>TAŞPAZAR CAMİİ</dd><dt>İhale No</dt><dd>2026/1290077</dd>
-    <dt>İhale Konusu</dt><dd>AKSARAY İLİ MERKEZ İLÇE TAŞPAZAR MAHALLESİ 9248 ADA 3 NOLU PARSEL ÜZERİNE CAMİİ YAPIM İŞİ</dd>
-    <dt>İhaleyi Düzenleyen Kurum</dt><dd>AKSARAY BELEDİYE ETÜT VE PROJE MÜDÜRLÜĞÜ</dd>
-    <dt>Kazanan Firma</dt><dd>DAMA YOL İNŞAAT TAAHHÜT ANONİM ŞİRKETİ</dd></dl>
-  </article>
-</section>
-
-<section id="archive" class="view shell"><div class="section-title"><span>ARŞİV</span><h2>Proje & Teknik Arşiv</h2></div><div id="folderGrid" class="folders"></div></section>
-<section id="documents" class="view shell"><div class="section-title"><span>BELGELER</span><h2>Bulut Dosya Merkezi</h2></div><div class="toolbar"><input id="docSearch" placeholder="Dosya ara..."><select id="docType"><option value="">Tüm türler</option><option>PDF</option><option>DWG</option><option>DXF</option><option>XLSX</option><option>DOCX</option><option>ZIP</option></select></div><div class="dropzone locked" id="dropzone">Dosyaları buraya sürükleyin<br><small>Yetkili giriş + R2 signed upload altyapısı gerektirir.</small></div><div id="docList" class="card empty">Henüz dosya metadata kaydı yok.</div></section>
-<section id="photos" class="view shell"><div class="section-title"><span>SAHA</span><h2>Şantiye Fotoğrafları</h2></div><div class="toolbar"><input type="date" id="photoDate"><select id="photoLocation"></select><select id="photoWork"></select></div><div id="photoGrid" class="photo-grid empty">Henüz fotoğraf yok.</div></section>
-<section id="reports" class="view shell"><div class="section-title"><span>RAPORLAR</span><h2>Günlük / Haftalık / Aylık İlerleme</h2></div><div id="reportList" class="card empty">Henüz portal raporu bulunamadı.</div></section>
-<section id="status" class="view shell"><div class="section-title"><span>GÜNCEL DURUM</span><h2>Son saha güncellemesi</h2></div><article class="card"><div id="latestStatus">Veri bekleniyor.</div></article></section>
-<section id="sharing" class="view shell"><div class="section-title"><span>PAYLAŞIM</span><h2>Paylaşım Merkezi</h2></div><article class="card"><p>Süreli link, şifreli link, yalnız görüntüleme, indirme izni ve link iptali desteklenecek.</p><button disabled>Yeni güvenli paylaşım</button><small class="muted">Signed URL/token backend sözleşmesi tamamlanmadan aktif edilmez.</small></article></section>
-<section id="account" class="view shell"><div class="section-title"><span>HESAP</span><h2>Yetkili Girişi</h2></div><form id="loginForm" class="login card"><label>Kullanıcı Adı<input name="username" autocomplete="username" required></label><label>Şifre<input name="password" type="password" autocomplete="current-password" required></label><button>Giriş Yap</button><p id="loginMsg" class="muted"></p></form><div id="accountBox" class="card hidden"></div></section>
+<main class="hero"
+ aria-label="Taşpazar Camii Şantiye Takip Portalı">
 </main>
-<footer><span>AKSARAY BELEDİYESİ</span><span>DAMA YOL İNŞAAT A.Ş.</span><span>ORYVEX</span></footer>
-<script type="module" src="/app.js"></script>
-</body></html>
+</body>
+</html>

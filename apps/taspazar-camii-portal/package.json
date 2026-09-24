@@ -4,10 +4,9 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --host 0.0.0.0",
+    "dev": "vite",
     "build": "vite build",
-    "lint": "eslint .",
-    "typecheck": "tsc --allowJs --checkJs --noEmit --target ES2022 --module ESNext --moduleResolution Bundler --lib ES2022,DOM app.js"
+    "preview": "vite preview"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
