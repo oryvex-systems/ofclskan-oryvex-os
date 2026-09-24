@@ -78,7 +78,7 @@ function ocxFinanceSync(){
   field.forEach(r=>{
     employerEarned+=Number(
       r.cumulative_earned_value||
-      (Number(r.work_amount||0)*Number(r.cumulative_progress_percent||r.percent||0)/100)
+      (Number(r.work_amount||0)*Number(r.cumulative_progress_percent||r.progress_percent||r.percent||0)/100)
     );
   });
 
@@ -91,11 +91,43 @@ function ocxFinanceSync(){
   const subcontractNet=periodSubcontracts.reduce((t,x)=>t+Number(x.net||0),0);
   const subcontractBase=periodSubcontracts.reduce((t,x)=>t+Number(x.subBase||0),0);
   const grossMargin=employerEarned-subcontractBase;
-  const cashDifference=employerEarned-subcontractNet;
+  let fieldSummary=null;
+  if(window.ORYVEX_FIELD_FINANCE){
+    fieldSummary=window.ORYVEX_FIELD_FINANCE.summary(field);
+    employerEarned=fieldSummary.earned_value;
+  }
+
+  const physicalProgress=fieldSummary
+    ? Number(fieldSummary.physical_progress||0)
+    : 0;
+
+  const previousCertified=Math.max(0,Number(hakedis.previous||0));
+
+  const currentCertifiable=Math.max(
+    0,
+    employerEarned-previousCertified
+  );
+
+  const collected=Math.max(
+    0,
+    Number(hakedis.previousPaid||0)
+  );
+
+  const paid=Math.max(
+    0,
+    Number(subcontractNet||0)
+  );
+
+  const cashDifference=collected-paid;
 
   const finance={
     payment_no:paymentNo,
+    physical_progress:physicalProgress,
     employer_earned:employerEarned,
+    previous_certified:previousCertified,
+    current_certifiable:currentCertifiable,
+    collected:collected,
+    paid:paid,
     subcontract_net:subcontractNet,
     gross_margin:grossMargin,
     cash_difference:cashDifference,
@@ -110,4 +142,4 @@ function ocxFinanceSync(){
 window.addEventListener('DOMContentLoaded',ocxFinanceSync);
 </script>
 <script src="global-nav.js"></script><script src="planlama-finans-db.js"></script><script src="finance-transactions.js"></script>
-</body></html>
+<script src="field-finance-core.js"></script></body></html>

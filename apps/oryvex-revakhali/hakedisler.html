@@ -46,7 +46,7 @@ function loadFieldProgress(){
 
   rows.forEach(r=>{
     const a=Number(r.work_amount||0);
-    const pct=Number(r.cumulative_progress_percent||r.percent||0);
+    const pct=Number(r.cumulative_progress_percent||r.progress_percent||r.percent||0);
     const e=Number(r.cumulative_earned_value||a*pct/100);
     earned+=e;
     amount+=a;
@@ -67,4 +67,37 @@ function loadFieldProgress(){
 
 window.addEventListener('DOMContentLoaded',loadFieldProgress);
 </script>
-<script src="global-nav.js"></script><script src="hakedisler-db.js"></script></body></html>
+<script src="global-nav.js"></script><script src="hakedisler-db.js"></script><script src="field-finance-core.js"></script><script id="oryvex_auto_hakedis_bridge">
+(()=>{
+function syncFieldToHakedis(){
+ if(!window.ORYVEX_FIELD_FINANCE)return;
+ const C=window.ORYVEX_FIELD_FINANCE;
+ const rows=C.readFieldRows();
+ if(!rows.length)return;
+
+ const previousEl=document.getElementById("previous");
+ const previous=Number(previousEl?.value||0);
+ const cert=C.periodCertification(rows,previous);
+
+ const progress=document.getElementById("progress");
+ const cumulative=document.getElementById("cumProgress");
+
+ if(progress)progress.value=cert.physical_progress.toFixed(2);
+ if(cumulative)cumulative.value=cert.physical_progress.toFixed(2);
+
+ window.oryvexFieldEarned=cert.earned_value;
+ window.oryvexCurrentCertifiable=cert.current_certifiable;
+ window.oryvexFieldPhysicalProgress=cert.physical_progress;
+
+ if(typeof calculate==="function")calculate();
+
+ window.dispatchEvent(new CustomEvent("oryvex:hakedis-field-sync",{
+  detail:cert
+ }));
+}
+
+window.addEventListener("load",syncFieldToHakedis);
+window.addEventListener("oryvex:field-finance-updated",syncFieldToHakedis);
+})();
+</script>
+</body></html>
