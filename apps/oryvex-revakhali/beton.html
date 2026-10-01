@@ -1,0 +1,1308 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Beton Takip · ORYVEX ŞANTİYE OS</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+*{box-sizing:border-box}
+:root{
+  --bg:#07111f;
+  --panel:#0b1828;
+  --panel2:#0d1d2f;
+  --line:#1b3855;
+  --text:#eef4ff;
+  --muted:#8fa1b8;
+  --orange:#f59e0b;
+  --green:#42d392;
+  --red:#fb7185;
+  --blue:#60a5fa;
+}
+
+body{
+  margin:0;
+  background:
+    radial-gradient(circle at 15% 0%,#12345a 0,transparent 32%),
+    var(--bg);
+  color:var(--text);
+  font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+
+.w{
+  max-width:1380px;
+  margin:auto;
+  padding:16px;
+}
+
+.top{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  margin-bottom:14px;
+}
+
+.brand{
+  font-weight:1000;
+  font-size:15px;
+}
+
+.brand b{color:var(--orange)}
+
+.cloud{
+  color:var(--muted);
+  font-size:12px;
+  font-weight:800;
+}
+
+.hero,.card{
+  background:rgba(11,24,40,.94);
+  border:1px solid var(--line);
+  border-radius:20px;
+}
+
+.hero{
+  padding:22px;
+  margin-bottom:12px;
+}
+
+.eyebrow{
+  color:var(--orange);
+  font-size:12px;
+  font-weight:1000;
+  letter-spacing:.08em;
+}
+
+.hero h1{
+  margin:5px 0;
+  font-size:clamp(30px,5vw,52px);
+}
+
+.muted{
+  color:var(--muted);
+  line-height:1.5;
+}
+
+.kpis{
+  display:grid;
+  grid-template-columns:repeat(7,1fr);
+  gap:10px;
+  margin:12px 0;
+}
+
+.card{
+  padding:17px;
+}
+
+.kpi span{
+  display:block;
+  color:var(--muted);
+  font-size:11px;
+  min-height:30px;
+}
+
+.kpi strong{
+  display:block;
+  font-size:clamp(19px,2.3vw,29px);
+  margin-top:4px;
+}
+
+.progress{
+  height:10px;
+  background:#13283e;
+  border-radius:999px;
+  overflow:hidden;
+  margin-top:10px;
+}
+
+.progress i{
+  display:block;
+  height:100%;
+  width:0;
+  background:var(--orange);
+  transition:width .3s ease;
+}
+
+.layout{
+  display:grid;
+  grid-template-columns:.82fr 1.18fr;
+  gap:12px;
+  margin-top:12px;
+}
+
+h2{
+  margin:0 0 6px;
+  font-size:20px;
+}
+
+.form{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:9px;
+  margin-top:14px;
+}
+
+.full{grid-column:1/-1}
+
+label{
+  display:block;
+  color:#9fb0c5;
+  font-size:11px;
+  margin-bottom:5px;
+}
+
+input,select,textarea,button{
+  width:100%;
+  border:1px solid #24445f;
+  background:#081522;
+  color:var(--text);
+  border-radius:12px;
+  padding:11px;
+  font:inherit;
+}
+
+textarea{
+  min-height:78px;
+  resize:vertical;
+}
+
+button{
+  background:var(--orange);
+  color:#07111f;
+  border:0;
+  font-weight:1000;
+  cursor:pointer;
+}
+
+button:disabled{
+  opacity:.55;
+  cursor:not-allowed;
+}
+
+.secondary{
+  background:#12263b;
+  color:#eaf2ff;
+  border:1px solid #284966;
+}
+
+.danger{
+  background:#3a1820;
+  color:#fecdd3;
+  border:1px solid #7f1d2d;
+}
+
+.msg{
+  color:#f7c76b;
+  font-size:12px;
+  min-height:18px;
+  margin-top:9px;
+}
+
+.records{
+  margin-top:12px;
+}
+
+.record{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  align-items:flex-start;
+  background:var(--panel2);
+  border:1px solid #183550;
+  border-radius:15px;
+  padding:13px;
+  margin-bottom:9px;
+}
+
+.record strong{
+  display:block;
+  margin-bottom:4px;
+}
+
+.record small{
+  display:block;
+  color:var(--muted);
+  line-height:1.5;
+}
+
+.tag{
+  display:inline-block;
+  white-space:nowrap;
+  padding:5px 8px;
+  border-radius:999px;
+  font-size:10px;
+  font-weight:1000;
+}
+
+.tag.project{
+  color:#9ff3c8;
+  background:#12372a;
+}
+
+.tag.outside{
+  color:#fecaca;
+  background:#3a1820;
+}
+
+.tag.unclassified{
+  color:#fde68a;
+  background:#3a2c0d;
+}
+
+.slip-table-wrap{
+  overflow:auto;
+  margin-top:12px;
+  border:1px solid #183550;
+  border-radius:15px;
+}
+
+table{
+  width:100%;
+  min-width:1050px;
+  border-collapse:collapse;
+  background:#091726;
+}
+
+th,td{
+  padding:10px 8px;
+  border-bottom:1px solid #17314c;
+  text-align:left;
+  vertical-align:top;
+  font-size:11.5px;
+  line-height:1.3;
+}
+
+th:nth-child(1),
+td:nth-child(1){
+  width:42px;
+  text-align:center;
+}
+
+th:nth-child(2),
+td:nth-child(2){
+  min-width:115px;
+}
+
+th:nth-child(3),
+td:nth-child(3){
+  white-space:nowrap;
+  min-width:92px;
+}
+
+th:nth-child(4),
+td:nth-child(4){
+  white-space:nowrap;
+  min-width:70px;
+}
+
+th:nth-child(5),
+td:nth-child(5){
+  min-width:105px;
+}
+
+th:nth-child(6),
+td:nth-child(6){
+  min-width:180px;
+}
+
+th:nth-child(7),
+td:nth-child(7){
+  min-width:110px;
+}
+
+th:nth-child(8),
+td:nth-child(8),
+th:nth-child(9),
+td:nth-child(9){
+  min-width:135px;
+}
+
+th:nth-child(10),
+td:nth-child(10){
+  min-width:145px;
+}
+
+th{
+  color:#a9b8ca;
+  background:#0d1d2f;
+  position:sticky;
+  top:0;
+  z-index:1;
+}
+
+td small{
+  color:var(--muted);
+  display:block;
+  margin-top:3px;
+}
+
+.check{
+  width:18px;
+  height:18px;
+  accent-color:var(--orange);
+}
+
+.assignbar{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:10px;
+  align-items:center;
+  padding:12px;
+  background:#0d1d2f;
+  border:1px solid #183550;
+  border-radius:15px;
+  margin-top:12px;
+}
+
+.assignbar button{
+  width:auto;
+  padding-left:18px;
+  padding-right:18px;
+}
+
+.empty{
+  color:var(--muted);
+  padding:20px;
+  text-align:center;
+  border:1px dashed #28435d;
+  border-radius:14px;
+}
+
+.section{
+  margin-top:12px;
+}
+
+.slip-entry{
+  margin-top:12px;
+}
+
+.slip-entry summary{
+  cursor:pointer;
+  font-weight:900;
+  color:#dce8f7;
+}
+
+.slip-entry[open] summary{
+  margin-bottom:12px;
+}
+
+.pill{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  border:1px solid #294864;
+  border-radius:999px;
+  padding:5px 9px;
+  font-size:11px;
+  color:#b8c7d9;
+}
+
+@media(max-width:1050px){
+  .kpis{grid-template-columns:repeat(4,1fr)}
+  .layout{grid-template-columns:1fr}
+}
+
+@media(max-width:650px){
+  .w{padding:10px}
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .form{grid-template-columns:1fr}
+  .full{grid-column:auto}
+  .top{align-items:flex-start}
+  .record{flex-direction:column}
+  .assignbar{grid-template-columns:1fr}
+  .assignbar button{width:100%}
+}
+
+.classify-panel{
+  margin:16px 0;
+  padding:16px;
+  background:#0d1d2f;
+  border:1px solid #234661;
+  border-radius:16px;
+}
+
+.classify-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:12px;
+  margin-bottom:14px;
+}
+
+.classify-head strong{
+  display:block;
+  font-size:15px;
+}
+
+.classify-head small{
+  display:block;
+  margin-top:5px;
+  color:var(--muted);
+}
+
+.classify-grid{
+  display:grid;
+  grid-template-columns:
+    minmax(180px,1fr)
+    minmax(140px,.8fr)
+    minmax(210px,1.2fr)
+    minmax(170px,.9fr)
+    auto;
+  gap:10px;
+  align-items:end;
+}
+
+.classify-grid label{
+  display:block;
+  margin-bottom:6px;
+  font-size:11px;
+  color:var(--muted);
+}
+
+.classify-grid input,
+.classify-grid select{
+  width:100%;
+}
+
+.classify-action button{
+  min-width:210px;
+  white-space:nowrap;
+}
+
+#assignMsg{
+  margin-top:10px;
+}
+
+@media(max-width:1100px){
+  .classify-grid{
+    grid-template-columns:1fr 1fr;
+  }
+
+  .classify-action{
+    grid-column:1/-1;
+  }
+
+  .classify-action button{
+    width:100%;
+  }
+}
+
+@media(max-width:650px){
+  .classify-head{
+    flex-direction:column;
+  }
+
+  .classify-grid{
+    grid-template-columns:1fr;
+  }
+
+  .classify-action{
+    grid-column:auto;
+  }
+}
+
+</style>
+<
+<style>
+/* ORYVEX_BETON_V101A_REPORT_CSS */
+
+.beton-report-panel{
+  margin-top:20px;
+}
+
+.beton-report-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:20px;
+  margin-bottom:18px;
+}
+
+.beton-report-head h2{
+  margin:0 0 6px;
+}
+
+.beton-report-head p{
+  margin:0;
+  opacity:.72;
+}
+
+.beton-report-count{
+  white-space:nowrap;
+  font-weight:800;
+  padding:9px 14px;
+  border:1px solid rgba(120,180,230,.25);
+  border-radius:999px;
+}
+
+.beton-filter-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:12px;
+  margin-bottom:16px;
+}
+
+.beton-filter-grid label{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  font-size:13px;
+  opacity:.96;
+}
+
+.beton-filter-grid input,
+.beton-filter-grid select{
+  width:100%;
+  min-height:44px;
+  border-radius:11px;
+  padding:0 12px;
+  border:1px solid rgba(80,150,200,.45);
+  background:#081827;
+  color:#edf5ff;
+}
+
+.beton-report-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin:8px 0 12px;
+}
+
+.beton-report-actions button{
+  min-height:44px;
+  padding:0 18px;
+  border-radius:11px;
+  font-weight:800;
+  cursor:pointer;
+}
+
+.beton-secondary-btn{
+  background:#10253a;
+  color:#edf5ff;
+  border:1px solid rgba(100,170,220,.4);
+}
+
+.beton-cari-btn{
+  background:#f6a009;
+  color:#07111f;
+  border:0;
+}
+
+.beton-cari-btn:disabled{
+  opacity:.45;
+  cursor:not-allowed;
+}
+
+.beton-selection-summary{
+  font-weight:800;
+  margin:8px 0;
+}
+
+.beton-cari-note{
+  font-size:13px;
+  opacity:.72;
+  margin-bottom:14px;
+}
+
+.beton-report-table-wrap{
+  overflow:auto;
+  border:1px solid rgba(80,150,200,.35);
+  border-radius:14px;
+}
+
+.beton-report-table{
+  width:100%;
+  min-width:1500px;
+  border-collapse:collapse;
+}
+
+.beton-report-table th,
+.beton-report-table td{
+  padding:11px 10px;
+  border-bottom:1px solid rgba(90,150,190,.18);
+  text-align:left;
+  vertical-align:top;
+}
+
+.beton-report-table th{
+  font-size:12px;
+  text-transform:uppercase;
+  letter-spacing:.02em;
+  white-space:nowrap;
+}
+
+.beton-report-table td{
+  font-size:13px;
+}
+
+.beton-report-table tr:last-child td{
+  border-bottom:0;
+}
+
+.beton-report-table .empty{
+  text-align:center;
+  padding:28px;
+  opacity:.65;
+}
+
+.beton-report-badge{
+  display:inline-flex;
+  align-items:center;
+  min-height:25px;
+  padding:2px 9px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:900;
+  white-space:nowrap;
+  background:#17283a;
+}
+
+.beton-report-badge.ready{
+  background:rgba(20,120,70,.28);
+}
+
+.beton-report-badge.blocked{
+  background:rgba(140,70,40,.30);
+}
+
+.beton-report-badge.project{
+  background:rgba(20,90,150,.30);
+}
+
+.beton-report-badge.non-project{
+  background:rgba(145,50,55,.34);
+}
+
+.beton-report-badge.unclassified{
+  background:rgba(120,120,120,.25);
+}
+
+@media(max-width:900px){
+  .beton-filter-grid{
+    grid-template-columns:1fr 1fr;
+  }
+
+  .beton-report-head{
+    flex-direction:column;
+  }
+}
+
+@media(max-width:600px){
+  .beton-filter-grid{
+    grid-template-columns:1fr;
+  }
+}
+
+@media print{
+
+  body{
+    background:#fff !important;
+    color:#000 !important;
+  }
+
+  body *{
+    visibility:hidden !important;
+  }
+
+  #betonReportPanel,
+  #betonReportPanel *{
+    visibility:visible !important;
+  }
+
+  #betonReportPanel{
+    position:absolute;
+    inset:0;
+    margin:0;
+    padding:0;
+    background:#fff !important;
+    color:#000 !important;
+  }
+
+  .beton-filter-grid,
+  .beton-report-actions,
+  .beton-cari-note,
+  .no-print{
+    display:none !important;
+  }
+
+  .beton-report-table-wrap{
+    overflow:visible;
+    border:0;
+  }
+
+  .beton-report-table{
+    min-width:0;
+    width:100%;
+    font-size:9px;
+  }
+
+  .beton-report-table th,
+  .beton-report-table td{
+    color:#000 !important;
+    border-color:#bbb !important;
+    padding:5px;
+  }
+
+  .beton-report-badge{
+    color:#000 !important;
+    border:1px solid #999;
+    background:transparent !important;
+  }
+}
+</style>
+
+/head>
+
+<body>
+<main class="w">
+
+<div class="top">
+  <div class="brand"><b>ORYVEX</b> ŞANTİYE OS · BETON TAKİP</div>
+  <div id="cloud" class="cloud">● BAĞLANIYOR</div>
+</div>
+
+<section class="hero">
+  <div class="eyebrow">TAŞPAZAR CAMİİ · BETON YÖNETİMİ</div>
+  <h1 id="projectName">Proje yükleniyor...</h1>
+  <div id="projectLocation" class="muted"></div>
+  <div class="progress"><i id="usageBar"></i></div>
+</section>
+
+<section class="kpis">
+  <div class="card kpi">
+    <span>PLANLANAN PROJE BETONU</span>
+    <strong id="planned">0 m³</strong>
+  </div>
+
+  <div class="card kpi">
+    <span>PROJEDE KULLANILAN</span>
+    <strong id="projectUsed">0 m³</strong>
+  </div>
+
+  <div class="card kpi">
+    <span>KALAN PROJE BETONU</span>
+    <strong id="remaining">0 m³</strong>
+  </div>
+
+  <div class="card kpi">
+    <span>PROJE KULLANIM ORANI</span>
+    <strong id="usage">%0.00</strong>
+  </div>
+
+  <div class="card kpi">
+    <span>PROJE DIŞI / ŞANTİYE GİDERİ</span>
+    <strong id="outside">0 m³</strong>
+  </div>
+
+  <div class="card kpi">
+    <span>SINIFLANDIRILMAMIŞ</span>
+    <strong id="unclassified">0 m³</strong>
+  </div>
+
+  <div class="card kpi">
+    <span>TOPLAM TESLİM</span>
+    <strong id="total">0 m³</strong>
+  </div>
+</section>
+
+<section class="layout">
+
+  <div class="card" id="entry">
+    <h2>Döküm / Kullanım Yeri Oluştur</h2>
+    <div class="muted">
+      Önce kullanım yerini oluştur. Ardından bir veya birden fazla beton fişini bu döküme bağla.
+      Miktar fişlerden hesaplanır.
+    </div>
+
+    <form id="pourForm" class="form">
+      <div>
+        <label>Döküm tarihi</label>
+        <input id="pourDate" name="pour_date" type="date" required>
+      </div>
+
+      <div>
+        <label>Sınıflandırma</label>
+        <select name="scope_type" required>
+          <option value="UNCLASSIFIED">Sınıflandırılacak / Atanacak</option>
+          <option value="PROJECT">Proje / İmalat Betonu</option>
+          <option value="NON_PROJECT">Proje Dışı / Şantiye Gideri</option>
+        </select>
+      </div>
+
+      <div>
+        <label>İş grubu</label>
+        <input name="work_group" value="Atanacak" placeholder="Temel, Perde, Döşeme...">
+      </div>
+
+      <div>
+        <label>İmalat / Kullanım yeri</label>
+        <input name="work_item" placeholder="Örn. C aksı temel betonu">
+      </div>
+
+      <div>
+        <label>Masraf merkezi</label>
+        <input name="cost_center" placeholder="Kaba İnşaat, Mobilizasyon...">
+      </div>
+
+      <div>
+        <label>Beton sınıfı</label>
+        <input name="concrete_class" placeholder="C20/25">
+      </div>
+
+      <div>
+        <label>Tedarikçi</label>
+        <input name="supplier_name" value="EKS Göktaş Hazır Beton San. Tic. Ltd. Şti.">
+      </div>
+
+      <div>
+        <label>Alt yüklenici / müşteri</label>
+        <input name="subcontractor_name" placeholder="Aktan Petrol İnş. Ltd. Şti.">
+      </div>
+
+      <div class="full">
+        <label>Not</label>
+        <textarea name="note" placeholder="Döküm açıklaması"></textarea>
+      </div>
+
+      <div class="full">
+        <button id="saveBtn" type="submit">Döküm / Kullanım Yeri Oluştur</button>
+      </div>
+    </form>
+
+    <div id="msg" class="msg"></div>
+
+    <details class="slip-entry">
+      <summary>＋ Yeni Beton Fişi Gir</summary>
+
+      <form id="slipForm" class="form">
+        <div>
+          <label>Fiş No</label>
+          <input name="slip_no" required>
+        </div>
+
+        <div>
+          <label>Fiş Tarihi</label>
+          <input id="slipDate" name="slip_date" type="date" required>
+        </div>
+
+        <div>
+          <label>Miktar (m³)</label>
+          <input name="quantity_m3" type="number" step="0.001" min="0.001" required>
+        </div>
+
+        <div>
+          <label>Beton sınıfı</label>
+          <input name="concrete_class" placeholder="C20/25 Katkısız">
+        </div>
+
+        <div>
+          <label>Tedarikçi</label>
+          <input name="supplier_name" value="EKS Göktaş Hazır Beton San. Tic. Ltd. Şti.">
+        </div>
+
+        <div>
+          <label>Araç plakası</label>
+          <input name="vehicle_plate">
+        </div>
+
+        <div>
+          <label>Şoför</label>
+          <input name="driver_name">
+        </div>
+
+        <div>
+          <label>Üretim başlangıç</label>
+          <input name="production_start" type="time" step="1">
+        </div>
+
+        <div>
+          <label>Üretim bitiş</label>
+          <input name="production_finish" type="time" step="1">
+        </div>
+
+        <div>
+          <label>Fişte yazan şantiye</label>
+          <input name="printed_site_name">
+        </div>
+
+        <div>
+          <label>Gerçek şantiye</label>
+          <input name="actual_site_name" value="TAŞPAZAR CAMİİ ŞANTİYESİ">
+        </div>
+
+        <div class="full">
+          <label>Not / müşteri / alt yüklenici bilgisi</label>
+          <textarea name="raw_note"></textarea>
+        </div>
+
+        <div class="full">
+          <button id="slipSaveBtn" type="submit">Beton Fişini Kaydet</button>
+        </div>
+      </form>
+
+      <div id="slipMsg" class="msg"></div>
+    </details>
+  </div>
+
+  <div class="card">
+    <h2>Döküm / Kullanım Yerleri</h2>
+    <div class="muted">
+      Döküm miktarı bağlı beton fişlerinin toplamıdır.
+    </div>
+    <div id="records" class="records"></div>
+  </div>
+
+</section>
+
+<section class="card section">
+  <h2>Beton Fişleri</h2>
+  <div class="muted">
+    Beton miktarının ana kaynağı bu fişlerdir. Döküme bağlanmamış fişler otomatik olarak
+    <b>Sınıflandırılmamış</b> kabul edilir.
+  </div>
+
+  
+  <div class="classify-panel" id="classifyPanel">
+    <div class="classify-head">
+      <div>
+        <strong>Beton Fişi Sınıflandırma</strong>
+        <small>
+          Seçili:
+          <b id="selectedCount">0</b> fiş ·
+          <b id="selectedM3">0 m³</b>
+        </small>
+      </div>
+
+      <span id="scopePreview"
+            class="tag unclassified">
+        SINIFLANDIRILMAMIŞ
+      </span>
+    </div>
+
+    <div class="classify-grid">
+
+      <div>
+        <label>Kullanım Türü</label>
+        <select id="assignScope">
+          <option value="UNCLASSIFIED">
+            Sınıflandırılmamış
+          </option>
+          <option value="PROJECT">
+            Proje / İmalat Betonu
+          </option>
+          <option value="NON_PROJECT">
+            Proje Dışı / Şantiye Gideri
+          </option>
+        </select>
+      </div>
+
+      <div>
+        <label>İş Grubu</label>
+        <select id="assignWorkGroup">
+          <option value="">Seçiniz</option>
+          <option>Grobeton</option>
+          <option>Temel</option>
+          <option>Perde</option>
+          <option>Kolon</option>
+          <option>Kiriş</option>
+          <option>Döşeme</option>
+          <option>Merdiven</option>
+          <option>Kubbe</option>
+          <option>Minare</option>
+          <option>Çevre İşleri</option>
+          <option>Mobilizasyon</option>
+          <option>Kule Vinç</option>
+          <option>Diğer</option>
+        </select>
+      </div>
+
+      <div>
+        <label>İmalat / Kullanım Yeri</label>
+        <input
+          id="assignWorkItem"
+          type="text"
+          placeholder="Örn. Radye Temel"
+        >
+      </div>
+
+      <div>
+        <label>Masraf Merkezi</label>
+        <select id="assignCostCenter">
+          <option value="">Seçiniz</option>
+          <option>Kaba İnşaat</option>
+          <option>Çevre İşleri</option>
+          <option>Mobilizasyon</option>
+          <option>Kule Vinç</option>
+          <option>Genel Gider</option>
+          <option>Diğer</option>
+        </select>
+      </div>
+
+      <div class="classify-action">
+        <button id="assignBtn"
+                type="button"
+                disabled>
+          KAYDET
+        </button>
+      </div>
+
+    </div>
+
+    <div id="assignMsg" class="msg"></div>
+  </div>
+
+
+  <div class="slip-table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th></th>
+          <th>Fiş</th>
+          <th>Tarih</th>
+          <th>Miktar</th>
+          <th>Beton</th>
+          <th>Tedarikçi</th>
+          <th>Araç / Şoför</th>
+          <th>Fişteki Yer</th>
+          <th>Gerçek Şantiye</th>
+          <th>Sınıflandırma</th>
+        </tr>
+      </thead>
+      <tbody id="slipRows">
+        <tr><td colspan="10">Yükleniyor...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+
+<!-- ORYVEX_CARI_LINK_V11 -->
+<div style="width:min(1440px,calc(100% - 32px));margin:0 auto 30px">
+  <a
+    id="oryvexCariLink"
+    href="cari.html"
+    style="
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:42px;
+      padding:9px 16px;
+      border:1px solid #2b4c68;
+      border-radius:10px;
+      background:#102b43;
+      color:#fff;
+      font-weight:750;
+      text-decoration:none
+    "
+  >Cari Takip</a>
+</div>
+
+<script>
+(()=>{
+  const p=new URLSearchParams(location.search);
+  const id=p.get('id')||p.get('project_id');
+  const a=document.getElementById('oryvexCariLink');
+  if(a && id) a.href='cari.html?id='+encodeURIComponent(id);
+})();
+</script>
+</main>
+
+<script src="beton-core.js"></script>
+<script src="global-nav.js"></script>
+<script src="session-watch.js"></script>
+<script src="pwa.js"></script>
+
+<script>
+window.addEventListener('load',()=>{
+  if(window.ORYVEXConcrete) window.ORYVEXConcrete.boot();
+});
+</script>
+
+</body>
+</html>
+
+<!-- ORYVEX_BETON_V101A_REPORT_PANEL -->
+<section class="card beton-report-panel" id="betonReportPanel">
+
+  <div class="beton-report-head">
+    <div>
+      <h2>Beton Fiş Listesi / Raporlama</h2>
+      <p>
+        Beton fişlerini filtrele, seç, çıktı al ve cari aktarım
+        durumunu takip et.
+      </p>
+    </div>
+
+    <div class="beton-report-count" id="reportCount">
+      0 fiş
+    </div>
+  </div>
+
+  <div class="beton-filter-grid">
+
+    <label>
+      Başlangıç Tarihi
+      <input
+        id="filterDateFrom"
+        type="date">
+    </label>
+
+    <label>
+      Bitiş Tarihi
+      <input
+        id="filterDateTo"
+        type="date">
+    </label>
+
+    <label>
+      Fiş No
+      <input
+        id="filterSlipNo"
+        type="search"
+        placeholder="Örn. 0014121">
+    </label>
+
+    <label>
+      Tedarikçi
+      <input
+        id="filterSupplier"
+        type="search"
+        placeholder="Tedarikçi ara">
+    </label>
+
+    <label>
+      Beton Sınıfı
+      <input
+        id="filterConcreteClass"
+        type="search"
+        placeholder="C20/25">
+    </label>
+
+    <label>
+      Sınıflandırma
+      <select id="filterScope">
+        <option value="">Tümü</option>
+        <option value="PROJECT">Proje Betonu</option>
+        <option value="NON_PROJECT">Proje Dışı / Şantiye Gideri</option>
+        <option value="UNCLASSIFIED">Sınıflandırılmamış</option>
+      </select>
+    </label>
+
+    <label>
+      İş Grubu
+      <input
+        id="filterWorkGroup"
+        type="search"
+        placeholder="İş grubu">
+    </label>
+
+    <label>
+      Masraf Merkezi
+      <input
+        id="filterCostCenter"
+        type="search"
+        placeholder="Masraf merkezi">
+    </label>
+
+    <label>
+      Cari Durumu
+      <select id="filterCariStatus">
+        <option value="">Tümü</option>
+        <option value="READY">Aktarıma Hazır</option>
+        <option value="BLOCKED">Sınıflandırma Bekliyor</option>
+        <option value="TRANSFERRED">Aktarıldı</option>
+      </select>
+    </label>
+
+  </div>
+
+  <div class="beton-report-actions">
+
+    <button
+      id="filterResetBtn"
+      type="button"
+      class="beton-secondary-btn">
+      Filtreleri Temizle
+    </button>
+
+    <button
+      id="selectVisibleBtn"
+      type="button"
+      class="beton-secondary-btn">
+      Görünenleri Seç
+    </button>
+
+    <button
+      id="printBetonBtn"
+      type="button"
+      class="beton-secondary-btn">
+      Yazdır / PDF
+    </button>
+
+    <button
+      id="csvBetonBtn"
+      type="button"
+      class="beton-secondary-btn">
+      Excel / CSV
+    </button>
+
+    <button
+      id="cariTransferBtn"
+      type="button"
+      class="beton-cari-btn"
+      disabled>
+      Cariye Aktar
+    </button>
+
+  </div>
+
+  <div class="beton-selection-summary" id="reportSelectionSummary">
+    Seçili: 0 fiş · 0 m³
+  </div>
+
+  <div class="beton-cari-note" id="cariIntegrationNote">
+    Cari entegrasyonu hazırlanıyor. Sınıflandırılmamış fişler
+    cariye aktarılamaz.
+  </div>
+
+  <div class="beton-report-table-wrap">
+    <table class="beton-report-table" id="betonReportTable">
+      <thead>
+        <tr>
+          <th class="no-print">
+            <input
+              id="reportSelectAll"
+              type="checkbox"
+              aria-label="Tüm görünen fişleri seç">
+          </th>
+          <th>Fiş</th>
+          <th>Tarih</th>
+          <th>Miktar</th>
+          <th>Beton</th>
+          <th>Tedarikçi</th>
+          <th>Araç / Şoför</th>
+          <th>Fişteki Yer</th>
+          <th>Gerçek Şantiye</th>
+          <th>Sınıflandırma</th>
+          <th>İş Grubu</th>
+          <th>İmalat / Kullanım Yeri</th>
+          <th>Masraf Merkezi</th>
+          <th>Cari</th>
+        </tr>
+      </thead>
+
+      <tbody id="betonReportBody">
+        <tr>
+          <td colspan="14" class="empty">
+            Beton fişleri yükleniyor...
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</section>
+

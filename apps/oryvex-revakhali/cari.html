@@ -1,0 +1,658 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#081321">
+
+<title>ORYVEX · Cari Takip</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#07111f;
+  --panel:#0d1b2d;
+  --panel2:#102239;
+  --line:#20344d;
+  --text:#edf5ff;
+  --muted:#91a5bd;
+  --cyan:#48d8ff;
+  --green:#52e0a1;
+  --amber:#ffca62;
+  --red:#ff7d7d;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  min-height:100vh;
+  background:
+    radial-gradient(circle at 15% 0%,#12345a 0,transparent 38%),
+    var(--bg);
+  color:var(--text);
+  font:15px/1.5 ui-sans-serif,system-ui,-apple-system,
+    BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+
+main{
+  width:min(1440px,calc(100% - 32px));
+  margin:0 auto;
+  padding:32px 0 80px;
+}
+
+.hero{
+  display:flex;
+  justify-content:space-between;
+  gap:24px;
+  align-items:flex-start;
+  margin-bottom:24px;
+}
+
+.eyebrow{
+  color:var(--cyan);
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:.12em;
+}
+
+h1{
+  margin:4px 0 6px;
+  font-size:32px;
+}
+
+h2{
+  margin:0 0 16px;
+  font-size:19px;
+}
+
+.muted{color:var(--muted)}
+
+.status{
+  padding:8px 12px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  background:rgba(13,27,45,.88);
+  font-size:12px;
+  font-weight:800;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:14px;
+  margin-bottom:22px;
+}
+
+.kpi,.card{
+  border:1px solid var(--line);
+  background:rgba(13,27,45,.92);
+  border-radius:18px;
+  box-shadow:0 16px 42px rgba(0,0,0,.18);
+}
+
+.kpi{padding:18px}
+
+.kpi small{
+  display:block;
+  color:var(--muted);
+  margin-bottom:8px;
+}
+
+.kpi strong{
+  font-size:25px;
+  display:block;
+}
+
+.card{
+  padding:20px;
+  margin-bottom:18px;
+}
+
+.toolbar{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  align-items:end;
+}
+
+.field{
+  min-width:170px;
+  flex:1;
+}
+
+label{
+  display:block;
+  color:var(--muted);
+  font-size:12px;
+  margin-bottom:6px;
+}
+
+input,select{
+  width:100%;
+  min-height:42px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:9px 11px;
+  background:#081624;
+  color:var(--text);
+}
+
+button,.button{
+  border:1px solid #2b4c68;
+  border-radius:10px;
+  min-height:42px;
+  padding:9px 15px;
+  background:#102b43;
+  color:white;
+  font-weight:750;
+  cursor:pointer;
+  text-decoration:none;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+
+button:hover,.button:hover{
+  border-color:var(--cyan);
+}
+
+.table-wrap{
+  overflow:auto;
+  border:1px solid var(--line);
+  border-radius:14px;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  min-width:1050px;
+}
+
+th,td{
+  text-align:left;
+  padding:12px 13px;
+  border-bottom:1px solid var(--line);
+  vertical-align:top;
+}
+
+th{
+  position:sticky;
+  top:0;
+  background:#102239;
+  color:#bdd0e2;
+  font-size:12px;
+  z-index:2;
+}
+
+.money{
+  text-align:right;
+  white-space:nowrap;
+}
+
+.badge{
+  display:inline-flex;
+  padding:4px 8px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:800;
+  border:1px solid var(--line);
+}
+
+.badge.debit{
+  color:var(--amber);
+  background:rgba(255,202,98,.08);
+}
+
+.badge.credit{
+  color:var(--green);
+  background:rgba(82,224,161,.08);
+}
+
+.empty{
+  padding:36px;
+  text-align:center;
+  color:var(--muted);
+}
+
+@media(max-width:900px){
+  .grid{grid-template-columns:repeat(2,1fr)}
+  .hero{display:block}
+  .status{display:inline-flex;margin-top:12px}
+}
+
+@media(max-width:560px){
+  main{width:min(100% - 20px,1440px)}
+  .grid{grid-template-columns:1fr}
+  h1{font-size:26px}
+}
+
+@media print{
+  body{background:white;color:black}
+  .no-print,global-nav{display:none!important}
+  main{width:100%;padding:0}
+  .card,.kpi{box-shadow:none;border:1px solid #ccc}
+  th{position:static;background:#eee;color:black}
+  td{color:black}
+}
+</style>
+</head>
+
+<body>
+
+<script src="global-nav.js"></script>
+
+<main>
+
+<section class="hero">
+  <div>
+    <div class="eyebrow">ORYVEX ŞANTİYE OS · FİNANS</div>
+    <h1>Cari Takip</h1>
+    <div class="muted" id="projectName">Taşpazar Camii</div>
+  </div>
+
+  <div class="status" id="cariStatus">
+    ● OTURUM KONTROL EDİLİYOR
+  </div>
+</section>
+
+<section class="grid">
+  <div class="kpi">
+    <small>Toplam Borç</small>
+    <strong id="totalDebit">₺0,00</strong>
+  </div>
+
+  <div class="kpi">
+    <small>Toplam Ödeme / Alacak</small>
+    <strong id="totalCredit">₺0,00</strong>
+  </div>
+
+  <div class="kpi">
+    <small>Kalan Bakiye</small>
+    <strong id="balance">₺0,00</strong>
+  </div>
+
+  <div class="kpi">
+    <small>Hareket Sayısı</small>
+    <strong id="movementCount">0</strong>
+  </div>
+</section>
+
+<section class="card no-print">
+  <h2>Filtreler</h2>
+
+  <div class="toolbar">
+    <div class="field">
+      <label>Tedarikçi / Cari</label>
+      <select id="accountFilter">
+        <option value="">Tümü</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Başlangıç</label>
+      <input type="date" id="startDate">
+    </div>
+
+    <div class="field">
+      <label>Bitiş</label>
+      <input type="date" id="endDate">
+    </div>
+
+    <div class="field">
+      <label>Kaynak / Fiş No</label>
+      <input id="searchText" placeholder="0014121, EKS...">
+    </div>
+
+    <button id="clearFilters">Temizle</button>
+    <button onclick="window.print()">Yazdır / PDF</button>
+    <button id="csvBtn">Excel / CSV</button>
+
+    <a
+      class="button"
+      id="betonLink"
+      href="beton.html"
+    >Beton Takip</a>
+  </div>
+</section>
+
+<section class="card">
+  <h2>Cari Hareketler</h2>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Tarih</th>
+          <th>Cari / Tedarikçi</th>
+          <th>Tür</th>
+          <th>Kaynak</th>
+          <th>Fiş No</th>
+          <th>Masraf Merkezi</th>
+          <th>Miktar</th>
+          <th>Birim Fiyat</th>
+          <th class="money">Tutar</th>
+          <th>Açıklama</th>
+        </tr>
+      </thead>
+
+      <tbody id="rows">
+        <tr>
+          <td colspan="10" class="empty">
+            Veriler yükleniyor...
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+</main>
+
+<script>
+(()=>{
+'use strict';
+
+const PROJECT_ID =
+  new URLSearchParams(location.search).get('id') ||
+  new URLSearchParams(location.search).get('project_id') ||
+  '62e1d67f-c1c5-47e1-9aec-e2d79e6c08cf';
+
+const SUPABASE_URL =
+  'https://wdimzayfvtlrxljpsvza.supabase.co';
+
+const SUPABASE_KEY =
+  'sb_publishable_FZwX09JGrJt3Q9WXW3V1dQ_-g9aegh4';
+
+const sb =
+  window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+let movements=[];
+let accounts=[];
+
+const $=id=>document.getElementById(id);
+
+const money=n=>
+  new Intl.NumberFormat('tr-TR',{
+    style:'currency',
+    currency:'TRY'
+  }).format(Number(n||0));
+
+const num=n=>
+  new Intl.NumberFormat('tr-TR',{
+    maximumFractionDigits:3
+  }).format(Number(n||0));
+
+const esc=v=>String(v??'')
+  .replaceAll('&','&amp;')
+  .replaceAll('<','&lt;')
+  .replaceAll('>','&gt;')
+  .replaceAll('"','&quot;');
+
+function accountName(x){
+  return (
+    x.supplier_name ||
+    accounts.find(a=>a.id===x.account_id)?.name ||
+    accounts.find(a=>a.id===x.account_id)?.title ||
+    accounts.find(a=>a.id===x.account_id)?.account_name ||
+    'Cari Hesap'
+  );
+}
+
+function isDebit(x){
+  return [
+    'debit',
+    'borc',
+    'borç',
+    'expense',
+    'out'
+  ].includes(String(x.type||'').toLowerCase());
+}
+
+function filtered(){
+  const account=$('accountFilter').value;
+  const start=$('startDate').value;
+  const end=$('endDate').value;
+  const q=$('searchText').value.trim().toLocaleLowerCase('tr-TR');
+
+  return movements.filter(x=>{
+    if(account && x.account_id!==account) return false;
+    if(start && String(x.txn_date||'')<start) return false;
+    if(end && String(x.txn_date||'')>end) return false;
+
+    if(q){
+      const hay=[
+        accountName(x),
+        x.source_no,
+        x.source_type,
+        x.description,
+        x.cost_center
+      ].join(' ').toLocaleLowerCase('tr-TR');
+
+      if(!hay.includes(q)) return false;
+    }
+
+    return true;
+  });
+}
+
+function render(){
+  const list=filtered();
+
+  let debit=0;
+  let credit=0;
+
+  list.forEach(x=>{
+    if(isDebit(x)) debit+=Number(x.amount||0);
+    else credit+=Number(x.amount||0);
+  });
+
+  $('totalDebit').textContent=money(debit);
+  $('totalCredit').textContent=money(credit);
+  $('balance').textContent=money(debit-credit);
+  $('movementCount').textContent=String(list.length);
+
+  $('rows').innerHTML=list.length
+    ? list.map(x=>`
+      <tr>
+        <td>${esc(x.txn_date||'')}</td>
+        <td><strong>${esc(accountName(x))}</strong></td>
+        <td>
+          <span class="badge ${isDebit(x)?'debit':'credit'}">
+            ${isDebit(x)?'BORÇ':'ÖDEME / ALACAK'}
+          </span>
+        </td>
+        <td>${esc(
+          x.source_type==='CONCRETE_SLIP'
+            ? 'Beton Fişi'
+            : x.source_type||'-'
+        )}</td>
+        <td>${esc(x.source_no||'-')}</td>
+        <td>${esc(x.cost_center||'-')}</td>
+        <td>
+          ${x.quantity!=null
+            ? num(x.quantity)+' '+esc(x.unit||'')
+            : '-'}
+        </td>
+        <td>
+          ${x.unit_price!=null
+            ? money(x.unit_price)
+            : '-'}
+        </td>
+        <td class="money"><strong>${money(x.amount)}</strong></td>
+        <td>${esc(x.description||'')}</td>
+      </tr>
+    `).join('')
+    : `<tr>
+        <td colspan="10" class="empty">
+          Filtreye uygun cari hareket bulunamadı.
+        </td>
+      </tr>`;
+}
+
+function fillAccounts(){
+  const seen=new Map();
+
+  movements.forEach(x=>{
+    if(x.account_id){
+      seen.set(x.account_id,accountName(x));
+    }
+  });
+
+  $('accountFilter').innerHTML=
+    '<option value="">Tümü</option>'+
+    [...seen.entries()]
+      .sort((a,b)=>a[1].localeCompare(b[1],'tr'))
+      .map(([id,name])=>
+        `<option value="${esc(id)}">${esc(name)}</option>`
+      ).join('');
+}
+
+async function boot(){
+  $('betonLink').href=
+    'beton.html?id='+encodeURIComponent(PROJECT_ID);
+
+  const {data:{session}}=await sb.auth.getSession();
+
+  if(!session){
+    $('cariStatus').textContent=
+      '● CANLI OTURUM YOK · SALT OKUNUR';
+
+    $('rows').innerHTML=`
+      <tr>
+        <td colspan="10" class="empty">
+          Canlı cari verileri için yetkili Supabase oturumu gerekiyor.
+          Giriş ekranına otomatik yönlendirme yapılmadı.
+        </td>
+      </tr>`;
+
+    return;
+  }
+
+  $('cariStatus').textContent='● CANLI SUPABASE';
+
+  const projectRes=await sb
+    .from('santiye_projects')
+    .select('id,name,company_id')
+    .eq('id',PROJECT_ID)
+    .single();
+
+  if(projectRes.error) throw projectRes.error;
+
+  $('projectName').textContent=projectRes.data.name;
+
+  const [accRes,txRes]=await Promise.all([
+    sb.from('santiye_accounts')
+      .select('*')
+      .eq('company_id',projectRes.data.company_id),
+
+    sb.from('santiye_account_transactions')
+      .select('*')
+      .eq('project_id',PROJECT_ID)
+      .order('txn_date',{ascending:false})
+      .order('created_at',{ascending:false})
+  ]);
+
+  if(accRes.error) throw accRes.error;
+  if(txRes.error) throw txRes.error;
+
+  accounts=accRes.data||[];
+  movements=txRes.data||[];
+
+  fillAccounts();
+  render();
+}
+
+function csv(){
+  const list=filtered();
+
+  const lines=[
+    [
+      'Tarih',
+      'Cari',
+      'Tür',
+      'Kaynak',
+      'Fiş No',
+      'Masraf Merkezi',
+      'Miktar',
+      'Birim',
+      'Birim Fiyat',
+      'Tutar',
+      'Açıklama'
+    ]
+  ];
+
+  list.forEach(x=>{
+    lines.push([
+      x.txn_date||'',
+      accountName(x),
+      isDebit(x)?'BORÇ':'ÖDEME/ALACAK',
+      x.source_type||'',
+      x.source_no||'',
+      x.cost_center||'',
+      x.quantity??'',
+      x.unit||'',
+      x.unit_price??'',
+      x.amount??'',
+      x.description||''
+    ]);
+  });
+
+  const clean=v=>
+    '"'+String(v??'').replaceAll('"','""')+'"';
+
+  const blob=new Blob(
+    ['\ufeff'+lines.map(r=>r.map(clean).join(';')).join('\n')],
+    {type:'text/csv;charset=utf-8'}
+  );
+
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=
+    'ORYVEX-Cari-Takip-'+
+    new Date().toISOString().slice(0,10)+
+    '.csv';
+
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+
+['accountFilter','startDate','endDate','searchText']
+  .forEach(id=>{
+    $(id).addEventListener(
+      id==='searchText'?'input':'change',
+      render
+    );
+  });
+
+$('clearFilters').addEventListener('click',()=>{
+  $('accountFilter').value='';
+  $('startDate').value='';
+  $('endDate').value='';
+  $('searchText').value='';
+  render();
+});
+
+$('csvBtn').addEventListener('click',csv);
+
+boot().catch(err=>{
+  console.error(err);
+  $('cariStatus').textContent='● HATA';
+  $('rows').innerHTML=`
+    <tr>
+      <td colspan="10" class="empty">
+        ${esc(err.message||err)}
+      </td>
+    </tr>`;
+});
+
+})();
+</script>
+
+<script src="session-watch.js"></script>
+<script src="pwa.js"></script>
+
+</body>
+</html>
