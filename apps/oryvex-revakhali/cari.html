@@ -238,6 +238,19 @@ th{
   td{color:black}
 }
 </style>
+
+<style>
+/* ORYVEX_CARI_V13_SOURCE_LINK */
+.oryvex-source-link{
+  color:#93c5fd;
+  text-decoration:none;
+  font-weight:850;
+}
+.oryvex-source-link:hover{
+  text-decoration:underline;
+}
+</style>
+
 </head>
 
 <body>
@@ -466,8 +479,11 @@ function render(){
         </td>
         <td>${esc(
           x.source_type==='CONCRETE_SLIP'
-            ? 'Beton Fişi'
-            : x.source_type||'-'
+            ? '<a class="oryvex-source-link" href="beton.html?id='+
+              encodeURIComponent(PROJECT_ID)+
+              '&slip='+encodeURIComponent(x.source_id||'')+
+              '">Beton Fişi</a>'
+            : esc(x.source_type||'-')
         )}</td>
         <td>${esc(x.source_no||'-')}</td>
         <td>${esc(x.cost_center||'-')}</td>
@@ -653,6 +669,34 @@ boot().catch(err=>{
 
 <script src="session-watch.js"></script>
 <script src="pwa.js"></script>
+
+
+<script>
+/* ORYVEX_CARI_V13_SOURCE_LINK */
+(()=>{
+  const q=new URLSearchParams(location.search);
+  const sourceId=q.get('source_id');
+
+  if(!sourceId) return;
+
+  window.addEventListener('load',()=>{
+    setTimeout(()=>{
+      const rows=[...document.querySelectorAll('tbody tr')];
+
+      const row=rows.find(r=>
+        r.textContent &&
+        r.textContent.includes(sourceId)
+      );
+
+      if(row)
+        row.scrollIntoView({
+          behavior:'smooth',
+          block:'center'
+        });
+    },800);
+  });
+})();
+</script>
 
 </body>
 </html>

@@ -753,6 +753,137 @@ td small{
 }
 </style>
 
+
+<style>
+/* ORYVEX_BETON_CARI_V13 */
+
+.oryvex-v13-status{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:25px;
+  padding:3px 9px;
+  border-radius:999px;
+  font-size:10px;
+  line-height:1.2;
+  font-weight:900;
+  white-space:nowrap;
+  border:1px solid transparent;
+}
+
+.oryvex-v13-status.unclassified{
+  color:#fde68a;
+  background:#3a2c0d;
+  border-color:#735b18;
+}
+
+.oryvex-v13-status.price{
+  color:#fbd38d;
+  background:#3b2610;
+  border-color:#87551d;
+}
+
+.oryvex-v13-status.ready{
+  color:#bbf7d0;
+  background:#12372a;
+  border-color:#28694f;
+}
+
+.oryvex-v13-status.transferred{
+  color:#bfdbfe;
+  background:#142f50;
+  border-color:#285c91;
+}
+
+.oryvex-v13-status.error{
+  color:#fecaca;
+  background:#3a1820;
+  border-color:#7f1d2d;
+}
+
+.oryvex-v13-toolbar{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin:12px 0;
+  padding:12px;
+  border:1px solid #234661;
+  border-radius:14px;
+  background:#0a1b2c;
+}
+
+.oryvex-v13-toolbar-left{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:8px;
+}
+
+.oryvex-v13-toolbar-right{
+  color:#8fa1b8;
+  font-size:11px;
+}
+
+.oryvex-v13-btn{
+  width:auto;
+  min-height:38px;
+  padding:8px 14px;
+}
+
+.oryvex-v13-price{
+  display:inline-flex;
+  flex-direction:column;
+  gap:3px;
+}
+
+.oryvex-v13-price strong{
+  color:#eef4ff;
+}
+
+.oryvex-v13-price small{
+  color:#8fa1b8;
+}
+
+.oryvex-v13-cari-link{
+  color:#93c5fd;
+  text-decoration:none;
+  font-weight:900;
+}
+
+.oryvex-v13-cari-link:hover{
+  text-decoration:underline;
+}
+
+.oryvex-v13-row-transferred{
+  background:rgba(20,60,95,.12);
+}
+
+.oryvex-v13-row-ready{
+  background:rgba(20,90,60,.08);
+}
+
+.oryvex-v13-row-blocked{
+  background:rgba(110,70,20,.07);
+}
+
+@media(max-width:650px){
+  .oryvex-v13-toolbar{
+    align-items:stretch;
+  }
+
+  .oryvex-v13-toolbar-left,
+  .oryvex-v13-toolbar-right{
+    width:100%;
+  }
+
+  .oryvex-v13-btn{
+    width:100%;
+  }
+}
+</style>
+
 </head>
 
 <body>
@@ -1118,6 +1249,804 @@ td small{
 window.addEventListener('load',()=>{
   if(window.ORYVEXConcrete) window.ORYVEXConcrete.boot();
 });
+</script>
+
+
+<script>
+/* ORYVEX_BETON_CARI_V13 */
+(()=>{
+'use strict';
+
+const V13 = {
+  version: '13.0.0',
+  projectId:
+    new URLSearchParams(location.search).get('id') ||
+    new URLSearchParams(location.search).get('project_id') ||
+    '62e1d67f-c1c5-47e1-9aec-e2d79e6c08cf',
+
+  transfers: new Map(),
+  slips: new Map(),
+  pours: new Map(),
+  session: null,
+  loading: false,
+  lastError: null
+};
+
+window.ORYVEXBetonCariV13 = V13;
+
+function q(id){
+  return document.getElementById(id);
+}
+
+function text(v){
+  return String(v ?? '');
+}
+
+function number(v){
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function trNumber(v, digits=3){
+  return new Intl.NumberFormat('tr-TR',{
+    minimumFractionDigits:0,
+    maximumFractionDigits:digits
+  }).format(number(v));
+}
+
+function trMoney(v){
+  return new Intl.NumberFormat('tr-TR',{
+    style:'currency',
+    currency:'TRY',
+    minimumFractionDigits:2,
+    maximumFractionDigits:2
+  }).format(number(v));
+}
+
+function escapeHtml(v){
+  return text(v)
+    .replaceAll('&','&amp;')
+    .replaceAll('<','&lt;')
+    .replaceAll('>','&gt;')
+    .replaceAll('"','&quot;')
+    .replaceAll("'","&#039;");
+}
+
+function supabaseClient(){
+  if(window.ORYVEXConcrete?.sb)
+    return window.ORYVEXConcrete.sb;
+
+  if(window.ORYVEXConcrete?.supabase)
+    return window.ORYVEXConcrete.supabase;
+
+  if(window.supabase){
+    if(!window.__ORYVEX_V13_SB){
+      window.__ORYVEX_V13_SB =
+        window.supabase.createClient(
+          'https://wdimzayfvtlrxljpsvza.supabase.co',
+          'sb_publishable_FZwX09JGrJt3Q9WXW3V1dQ_-g9aegh4'
+        );
+    }
+    return window.__ORYVEX_V13_SB;
+  }
+
+  return null;
+}
+
+function mainState(){
+  const c = window.ORYVEXConcrete || {};
+
+  const slips =
+    c.state?.slips ||
+    c.slips ||
+    window.ORYVEX_CONCRETE_STATE?.slips ||
+    [];
+
+  const pours =
+    c.state?.pours ||
+    c.pours ||
+    window.ORYVEX_CONCRETE_STATE?.pours ||
+    [];
+
+  return {
+    slips:Array.isArray(slips) ? slips : [],
+    pours:Array.isArray(pours) ? pours : []
+  };
+}
+
+function syncLocalState(){
+  const state = mainState();
+
+  V13.slips.clear();
+  V13.pours.clear();
+
+  state.slips.forEach(x=>{
+    if(x?.id)
+      V13.slips.set(x.id,x);
+  });
+
+  state.pours.forEach(x=>{
+    if(x?.id)
+      V13.pours.set(x.id,x);
+  });
+}
+
+function getSlip(id){
+  syncLocalState();
+  return V13.slips.get(id) || null;
+}
+
+function getPour(slip){
+  if(!slip?.pour_id) return null;
+  syncLocalState();
+  return V13.pours.get(slip.pour_id) || null;
+}
+
+function getTransfer(slipId){
+  return V13.transfers.get(slipId) || null;
+}
+
+function classification(slip){
+  const pour = getPour(slip);
+
+  if(!slip?.pour_id || !pour)
+    return {
+      code:'UNCLASSIFIED',
+      label:'Sınıflandırılmamış'
+    };
+
+  const scope = text(pour.scope_type).toUpperCase();
+
+  if(scope === 'PROJECT')
+    return {
+      code:'PROJECT',
+      label:'Proje / İmalat'
+    };
+
+  if(scope === 'NON_PROJECT')
+    return {
+      code:'NON_PROJECT',
+      label:'Proje Dışı'
+    };
+
+  return {
+    code:'UNCLASSIFIED',
+    label:'Sınıflandırılmamış'
+  };
+}
+
+function unitPrice(slip){
+  const pour = getPour(slip);
+  return number(pour?.unit_price);
+}
+
+function cariState(slip){
+  if(!slip)
+    return {
+      code:'ERROR',
+      label:'Fiş Bulunamadı',
+      className:'error'
+    };
+
+  const transfer = getTransfer(slip.id);
+
+  if(transfer)
+    return {
+      code:'TRANSFERRED',
+      label:'Cariye Aktarıldı',
+      className:'transferred',
+      transfer
+    };
+
+  const cls = classification(slip);
+
+  if(cls.code === 'UNCLASSIFIED')
+    return {
+      code:'UNCLASSIFIED',
+      label:'Sınıflandırma Bekliyor',
+      className:'unclassified'
+    };
+
+  const price = unitPrice(slip);
+
+  if(!(price > 0))
+    return {
+      code:'PRICE_WAITING',
+      label:'Fiyat Bekliyor',
+      className:'price'
+    };
+
+  return {
+    code:'READY',
+    label:'Cariye Hazır',
+    className:'ready'
+  };
+}
+
+function selectedIds(){
+  const ids = new Set();
+
+  document
+    .querySelectorAll(
+      'input[type="checkbox"][data-slip-id]:checked,'+
+      'input.check[data-id]:checked,'+
+      'input.check[value]:checked'
+    )
+    .forEach(el=>{
+      const id =
+        el.dataset.slipId ||
+        el.dataset.id ||
+        el.value;
+
+      if(id && /^[0-9a-f-]{30,}$/i.test(id))
+        ids.add(id);
+    });
+
+  if(window.ORYVEXConcrete?.selectedSlips instanceof Set){
+    window.ORYVEXConcrete.selectedSlips.forEach(id=>ids.add(id));
+  }
+
+  return [...ids];
+}
+
+function badgeFor(slip){
+  const st = cariState(slip);
+
+  let extra = '';
+
+  if(st.code === 'TRANSFERRED'){
+    extra =
+      ' title="'+
+      escapeHtml(
+        'Cari hareket: '+
+        (st.transfer.source_no || slip.slip_no || '')
+      )+
+      '"';
+  }
+
+  return (
+    '<span class="oryvex-v13-status '+
+    st.className+
+    '"'+extra+'>'+
+    escapeHtml(st.label)+
+    '</span>'
+  );
+}
+
+function amountFor(slip){
+  const transfer = getTransfer(slip.id);
+
+  if(transfer)
+    return number(transfer.amount);
+
+  const price = unitPrice(slip);
+
+  if(price > 0)
+    return number(slip.quantity_m3) * price;
+
+  return 0;
+}
+
+function decorateExistingRows(){
+  syncLocalState();
+
+  document
+    .querySelectorAll('input[type="checkbox"]')
+    .forEach(cb=>{
+      const id =
+        cb.dataset.slipId ||
+        cb.dataset.id ||
+        cb.value;
+
+      if(!id || !V13.slips.has(id))
+        return;
+
+      const slip = V13.slips.get(id);
+      const row = cb.closest('tr');
+
+      if(!row)
+        return;
+
+      row.dataset.v13SlipId = id;
+
+      row.classList.remove(
+        'oryvex-v13-row-transferred',
+        'oryvex-v13-row-ready',
+        'oryvex-v13-row-blocked'
+      );
+
+      const st = cariState(slip);
+
+      if(st.code === 'TRANSFERRED')
+        row.classList.add('oryvex-v13-row-transferred');
+      else if(st.code === 'READY')
+        row.classList.add('oryvex-v13-row-ready');
+      else
+        row.classList.add('oryvex-v13-row-blocked');
+
+      let cell = row.querySelector('.oryvex-v13-cari-cell');
+
+      if(!cell){
+        cell = document.createElement('td');
+        cell.className='oryvex-v13-cari-cell';
+        row.appendChild(cell);
+      }
+
+      const price = unitPrice(slip);
+      const amount = amountFor(slip);
+
+      cell.innerHTML =
+        badgeFor(slip)+
+        '<div class="oryvex-v13-price" style="margin-top:6px">'+
+          (
+            price > 0
+              ? '<small>Birim fiyat</small><strong>'+
+                escapeHtml(trMoney(price))+
+                ' / m³</strong>'
+              : '<small>Birim fiyat girilmedi</small>'
+          )+
+          (
+            amount > 0
+              ? '<small>Tutar: '+escapeHtml(trMoney(amount))+'</small>'
+              : ''
+          )+
+        '</div>';
+    });
+
+  ensureHeader();
+  updateToolbar();
+}
+
+function ensureHeader(){
+  const tables = [...document.querySelectorAll('table')];
+
+  tables.forEach(table=>{
+    if(!table.querySelector('input[type="checkbox"]'))
+      return;
+
+    const headRow = table.querySelector('thead tr');
+
+    if(!headRow)
+      return;
+
+    if(!headRow.querySelector('.oryvex-v13-cari-head')){
+      const th = document.createElement('th');
+      th.className='oryvex-v13-cari-head';
+      th.textContent='Cari Durumu';
+      headRow.appendChild(th);
+    }
+  });
+}
+
+function ensureToolbar(){
+  if(q('oryvexV13Toolbar'))
+    return;
+
+  const panel =
+    q('classifyPanel') ||
+    document.querySelector('.classify-panel');
+
+  if(!panel)
+    return;
+
+  const bar = document.createElement('div');
+
+  bar.id='oryvexV13Toolbar';
+  bar.className='oryvex-v13-toolbar';
+
+  bar.innerHTML=`
+    <div class="oryvex-v13-toolbar-left">
+      <button
+        id="oryvexV13Refresh"
+        type="button"
+        class="secondary oryvex-v13-btn">
+        Cari Durumunu Yenile
+      </button>
+
+      <button
+        id="oryvexV13Transfer"
+        type="button"
+        class="oryvex-v13-btn"
+        disabled>
+        Seçilenleri Cariye Aktar
+      </button>
+
+      <a
+        id="oryvexV13Cari"
+        class="oryvex-v13-cari-link"
+        href="cari.html">
+        Cari Takip →
+      </a>
+    </div>
+
+    <div
+      id="oryvexV13Summary"
+      class="oryvex-v13-toolbar-right">
+      Cari durumu yükleniyor...
+    </div>
+  `;
+
+  panel.insertAdjacentElement('afterend',bar);
+
+  q('oryvexV13Cari').href =
+    'cari.html?id='+encodeURIComponent(V13.projectId);
+
+  q('oryvexV13Refresh')
+    .addEventListener('click',async()=>{
+      await refresh();
+    });
+
+  q('oryvexV13Transfer')
+    .addEventListener('click',async()=>{
+      await transferSelected();
+    });
+}
+
+function updateToolbar(){
+  ensureToolbar();
+
+  const btn = q('oryvexV13Transfer');
+  const summary = q('oryvexV13Summary');
+
+  if(!btn || !summary)
+    return;
+
+  const ids = selectedIds();
+
+  let ready = 0;
+  let transferred = 0;
+  let blocked = 0;
+  let total = 0;
+
+  ids.forEach(id=>{
+    const slip = getSlip(id);
+
+    if(!slip)
+      return;
+
+    const st = cariState(slip);
+
+    if(st.code === 'READY'){
+      ready++;
+      total += amountFor(slip);
+    }
+    else if(st.code === 'TRANSFERRED')
+      transferred++;
+    else
+      blocked++;
+  });
+
+  const authenticated = Boolean(V13.session);
+
+  btn.disabled =
+    !authenticated ||
+    ready === 0 ||
+    V13.loading;
+
+  if(!authenticated){
+    summary.textContent =
+      'Canlı oturum yok · Cari aktarımı kapalı';
+    return;
+  }
+
+  if(ids.length === 0){
+    summary.textContent =
+      'Fiş seçildiğinde cari uygunluğu burada gösterilir.';
+    return;
+  }
+
+  summary.textContent =
+    ids.length+' seçili · '+
+    ready+' hazır · '+
+    blocked+' bekliyor · '+
+    transferred+' aktarılmış'+
+    (total > 0 ? ' · '+trMoney(total) : '');
+}
+
+async function loadSession(){
+  const sb = supabaseClient();
+
+  if(!sb)
+    return null;
+
+  const result = await sb.auth.getSession();
+
+  V13.session = result?.data?.session || null;
+
+  return V13.session;
+}
+
+async function loadTransfers(){
+  const sb = supabaseClient();
+
+  if(!sb)
+    throw new Error('Supabase istemcisi bulunamadı.');
+
+  if(!V13.session){
+    V13.transfers.clear();
+    return;
+  }
+
+  const {data,error} = await sb
+    .from('santiye_account_transactions')
+    .select(
+      'id,account_id,project_id,txn_date,type,amount,'+
+      'description,source_type,source_id,source_no,'+
+      'cost_center,quantity,unit,unit_price,supplier_name,created_at'
+    )
+    .eq('project_id',V13.projectId)
+    .eq('source_type','CONCRETE_SLIP')
+    .order('created_at',{ascending:false});
+
+  if(error)
+    throw error;
+
+  V13.transfers.clear();
+
+  (data || []).forEach(x=>{
+    if(x.source_id && !V13.transfers.has(x.source_id))
+      V13.transfers.set(x.source_id,x);
+  });
+}
+
+async function refresh(){
+  if(V13.loading)
+    return;
+
+  V13.loading=true;
+  V13.lastError=null;
+
+  ensureToolbar();
+
+  const summary=q('oryvexV13Summary');
+
+  if(summary)
+    summary.textContent='Cari durumu yenileniyor...';
+
+  try{
+    await loadSession();
+    await loadTransfers();
+
+    decorateExistingRows();
+
+    if(summary && !V13.session)
+      summary.textContent=
+        'Canlı oturum yok · Cari aktarımı kapalı';
+  }
+  catch(err){
+    console.error('ORYVEX V13:',err);
+
+    V13.lastError=err;
+
+    if(summary)
+      summary.textContent=
+        'Cari durumu okunamadı: '+
+        (err?.message || String(err));
+  }
+  finally{
+    V13.loading=false;
+    updateToolbar();
+  }
+}
+
+function validateSelection(ids){
+  const ready=[];
+  const errors=[];
+
+  ids.forEach(id=>{
+    const slip=getSlip(id);
+
+    if(!slip){
+      errors.push(id+' · Fiş bulunamadı');
+      return;
+    }
+
+    const st=cariState(slip);
+
+    if(st.code==='TRANSFERRED'){
+      errors.push(
+        (slip.slip_no || id)+
+        ' · zaten cariye aktarılmış'
+      );
+      return;
+    }
+
+    if(st.code==='UNCLASSIFIED'){
+      errors.push(
+        (slip.slip_no || id)+
+        ' · sınıflandırma bekliyor'
+      );
+      return;
+    }
+
+    if(st.code==='PRICE_WAITING'){
+      errors.push(
+        (slip.slip_no || id)+
+        ' · birim fiyat bekliyor'
+      );
+      return;
+    }
+
+    if(st.code==='READY')
+      ready.push(id);
+  });
+
+  return {ready,errors};
+}
+
+async function transferSelected(){
+  if(V13.loading)
+    return;
+
+  const sb=supabaseClient();
+
+  if(!sb){
+    alert('Supabase bağlantısı bulunamadı.');
+    return;
+  }
+
+  await loadSession();
+
+  if(!V13.session){
+    alert(
+      'Cari aktarımı için yetkili canlı oturum gerekiyor. '+
+      'Giriş ekranına otomatik yönlendirme yapılmadı.'
+    );
+    return;
+  }
+
+  const ids=selectedIds();
+
+  if(!ids.length){
+    alert('Önce en az bir beton fişi seçin.');
+    return;
+  }
+
+  await loadTransfers();
+
+  const check=validateSelection(ids);
+
+  if(check.errors.length){
+    alert(
+      'Cari aktarımı başlatılmadı.\n\n'+
+      check.errors.join('\n')
+    );
+    decorateExistingRows();
+    return;
+  }
+
+  if(!check.ready.length){
+    alert('Cariye aktarılabilecek fiş bulunamadı.');
+    return;
+  }
+
+  let total=0;
+
+  check.ready.forEach(id=>{
+    const slip=getSlip(id);
+    total += amountFor(slip);
+  });
+
+  const names=check.ready
+    .map(id=>getSlip(id)?.slip_no || id)
+    .join(', ');
+
+  const approved=confirm(
+    'Cariye aktarılacak beton fişleri:\n'+
+    names+
+    '\n\nToplam: '+trMoney(total)+
+    '\n\nBu işlem cari borç hareketi oluşturacaktır.'+
+    '\nDevam edilsin mi?'
+  );
+
+  if(!approved)
+    return;
+
+  V13.loading=true;
+  updateToolbar();
+
+  try{
+    const {data,error}=await sb.rpc(
+      'santiye_transfer_concrete_slips_to_cari',
+      {
+        p_project_id:V13.projectId,
+        p_slip_ids:check.ready
+      }
+    );
+
+    if(error)
+      throw error;
+
+    await loadTransfers();
+
+    decorateExistingRows();
+
+    const transferred =
+      Number(data?.transferred_count || check.ready.length);
+
+    const amount =
+      Number(data?.total_amount || total);
+
+    alert(
+      'Cari aktarımı tamamlandı.\n\n'+
+      transferred+' fiş aktarıldı.\n'+
+      'Toplam: '+trMoney(amount)
+    );
+  }
+  catch(err){
+    console.error('Beton -> Cari:',err);
+
+    alert(
+      'Cari aktarımı tamamlanamadı.\n\n'+
+      (err?.message || String(err))
+    );
+  }
+  finally{
+    V13.loading=false;
+    await refresh();
+  }
+}
+
+function observe(){
+  const root=document.body;
+
+  if(!root)
+    return;
+
+  let timer=null;
+
+  const observer=new MutationObserver(()=>{
+    clearTimeout(timer);
+
+    timer=setTimeout(()=>{
+      decorateExistingRows();
+    },120);
+  });
+
+  observer.observe(root,{
+    childList:true,
+    subtree:true
+  });
+}
+
+document.addEventListener('change',e=>{
+  if(
+    e.target instanceof HTMLInputElement &&
+    e.target.type==='checkbox'
+  ){
+    setTimeout(updateToolbar,0);
+  }
+});
+
+document.addEventListener('click',e=>{
+  if(
+    e.target.closest(
+      '#assignBtn,'+
+      '#saveBtn,'+
+      '#slipSaveBtn,'+
+      '#betonReportSelectVisible,'+
+      '#betonReportClearFilters'
+    )
+  ){
+    setTimeout(refresh,700);
+  }
+});
+
+async function boot(){
+  ensureToolbar();
+  observe();
+
+  await refresh();
+
+  setTimeout(refresh,1200);
+}
+
+if(document.readyState==='loading')
+  document.addEventListener('DOMContentLoaded',boot);
+else
+  boot();
+
+})();
 </script>
 
 </body>

@@ -1,4 +1,4 @@
-const CACHE='oryvex-santiye-shell-v5';
+const CACHE='oryvex-santiye-shell-v6';
 const SHELL=['/','/index.html','/giris.html','/modul.html','/proje-detay.html','/operasyon.html','/finans.html','/beton.html','/beton-core.js','/cari.html','/depo-evrak.html','/raporlar.html','/yonetici.html','/ayarlar.html','/kullanicilar.html','/sistem-kontrol.html','/global-nav.js','/activity-nav.js','/access-ui.js','/session-watch.js','/runtime-fixes.js','/project-detail-links.js','/mobile-nav.js','/pwa.js','/manifest.webmanifest','/oryvex-santiye-icon.svg'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).catch(()=>{}));self.skipWaiting()});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim()});
