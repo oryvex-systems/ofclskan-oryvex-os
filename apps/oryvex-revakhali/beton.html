@@ -884,6 +884,52 @@ td small{
 }
 </style>
 
+
+<style>
+/* ORYVEX_BETON_PRICE_V14 */
+
+.oryvex-v14-price-box{
+  display:grid;
+  grid-template-columns:
+    minmax(160px,1fr)
+    minmax(160px,1fr)
+    minmax(160px,1fr);
+  gap:10px;
+  margin:12px 0;
+}
+
+.oryvex-v14-price-card{
+  padding:12px;
+  border:1px solid #24445f;
+  border-radius:14px;
+  background:#091827;
+}
+
+.oryvex-v14-price-card span{
+  display:block;
+  color:#8fa1b8;
+  font-size:11px;
+}
+
+.oryvex-v14-price-card strong{
+  display:block;
+  margin-top:5px;
+  font-size:18px;
+}
+
+.oryvex-v14-auto{
+  color:#42d392;
+  font-size:11px;
+  font-weight:900;
+}
+
+@media(max-width:650px){
+  .oryvex-v14-price-box{
+    grid-template-columns:1fr;
+  }
+}
+</style>
+
 </head>
 
 <body>
@@ -938,6 +984,45 @@ td small{
   </div>
 </section>
 
+
+<!-- ORYVEX_BETON_PRICE_V14 -->
+<section class="card section">
+  <h2>Beton Birim Fiyat Tarifesi</h2>
+
+  <div class="muted">
+    Birim fiyat beton sınıfından otomatik alınır.
+    Fiş bazında elle fiyat girilmez.
+  </div>
+
+  <div class="oryvex-v14-price-box">
+
+    <div class="oryvex-v14-price-card">
+      <span>BETON SINIFI</span>
+      <strong>C16</strong>
+      <div class="oryvex-v14-auto">
+        2.600 TL / m³
+      </div>
+    </div>
+
+    <div class="oryvex-v14-price-card">
+      <span>BETON SINIFI</span>
+      <strong>C20/25</strong>
+      <div class="oryvex-v14-auto">
+        2.700 TL / m³
+      </div>
+    </div>
+
+    <div class="oryvex-v14-price-card">
+      <span>BETON SINIFI</span>
+      <strong>C30/35</strong>
+      <div class="oryvex-v14-auto">
+        2.800 TL / m³
+      </div>
+    </div>
+
+  </div>
+</section>
+
 <section class="layout">
 
   <div class="card" id="entry">
@@ -979,7 +1064,12 @@ td small{
 
       <div>
         <label>Beton sınıfı</label>
-        <input name="concrete_class" placeholder="C20/25">
+        <select name="concrete_class" class="oryvex-concrete-class-select">
+  <option value="">Beton sınıfı seçiniz</option>
+  <option value="C16">C16 · 2.600 TL/m³</option>
+  <option value="C20/25">C20/25 · 2.700 TL/m³</option>
+  <option value="C30/35">C30/35 · 2.800 TL/m³</option>
+</select>
       </div>
 
       <div>
@@ -1025,7 +1115,12 @@ td small{
 
         <div>
           <label>Beton sınıfı</label>
-          <input name="concrete_class" placeholder="C20/25 Katkısız">
+          <select name="concrete_class" class="oryvex-concrete-class-select">
+  <option value="">Beton sınıfı seçiniz</option>
+  <option value="C16">C16 · 2.600 TL/m³</option>
+  <option value="C20/25">C20/25 · 2.700 TL/m³</option>
+  <option value="C30/35">C30/35 · 2.800 TL/m³</option>
+</select>
         </div>
 
         <div>
@@ -1416,8 +1511,82 @@ function classification(slip){
 }
 
 function unitPrice(slip){
-  const pour = getPour(slip);
-  return number(pour?.unit_price);
+
+  const cls =
+    slip?.concrete_class ||
+    getPour(slip)?.concrete_class ||
+    '';
+
+  if(
+    window.ORYVEXConcretePriceV14 &&
+    typeof window.ORYVEXConcretePriceV14.prices === 'object'
+  ){
+
+    let v=String(cls||'')
+      .toUpperCase()
+      .trim()
+      .replaceAll(' ','')
+      .replaceAll('-','/')
+      .replaceAll('_','/');
+
+    let normalized=v;
+
+    if(v.startsWith('C16'))
+      normalized='C16';
+
+    else if(
+      v.startsWith('C20/25') ||
+      (
+        v.startsWith('C20') &&
+        v.includes('25')
+      )
+    )
+      normalized='C20/25';
+
+    else if(
+      v.startsWith('C30/35') ||
+      (
+        v.startsWith('C30') &&
+        v.includes('35')
+      )
+    )
+      normalized='C30/35';
+
+    return number(
+      window
+        .ORYVEXConcretePriceV14
+        .prices[normalized]
+    );
+  }
+
+  const normalized=
+    String(cls||'')
+      .toUpperCase()
+      .replaceAll(' ','')
+      .replaceAll('-','/');
+
+  if(normalized.startsWith('C16'))
+    return 2600;
+
+  if(
+    normalized.startsWith('C20/25') ||
+    (
+      normalized.startsWith('C20') &&
+      normalized.includes('25')
+    )
+  )
+    return 2700;
+
+  if(
+    normalized.startsWith('C30/35') ||
+    (
+      normalized.startsWith('C30') &&
+      normalized.includes('35')
+    )
+  )
+    return 2800;
+
+  return 0;
 }
 
 function cariState(slip){
@@ -2043,6 +2212,300 @@ async function boot(){
 
 if(document.readyState==='loading')
   document.addEventListener('DOMContentLoaded',boot);
+else
+  boot();
+
+})();
+</script>
+
+
+<script>
+/* ORYVEX_BETON_PRICE_V14 */
+(()=>{
+'use strict';
+
+const PRICE_MAP = {
+  'C16':2600,
+  'C20/25':2700,
+  'C30/35':2800
+};
+
+window.ORYVEXConcretePriceV14 = {
+  prices:PRICE_MAP
+};
+
+function normalizeConcreteClass(value){
+
+  let v=String(value||'')
+    .toUpperCase()
+    .trim()
+    .replaceAll(' ','')
+    .replaceAll('-','/')
+    .replaceAll('_','/');
+
+  if(v.startsWith('C16'))
+    return 'C16';
+
+  if(
+    v.startsWith('C20/25') ||
+    (
+      v.startsWith('C20') &&
+      v.includes('25')
+    )
+  )
+    return 'C20/25';
+
+  if(
+    v.startsWith('C30/35') ||
+    (
+      v.startsWith('C30') &&
+      v.includes('35')
+    )
+  )
+    return 'C30/35';
+
+  return v;
+}
+
+function priceFor(value){
+  return PRICE_MAP[
+    normalizeConcreteClass(value)
+  ] || 0;
+}
+
+function money(n){
+  return new Intl.NumberFormat(
+    'tr-TR',
+    {
+      style:'currency',
+      currency:'TRY'
+    }
+  ).format(Number(n||0));
+}
+
+function state(){
+  return (
+    window.ORYVEX_CONCRETE_STATE ||
+    window.ORYVEXConcrete?.state ||
+    {}
+  );
+}
+
+function slips(){
+  return Array.isArray(state().slips)
+    ? state().slips
+    : [];
+}
+
+function pours(){
+  return Array.isArray(state().pours)
+    ? state().pours
+    : [];
+}
+
+function slipById(id){
+  return slips().find(x=>x.id===id);
+}
+
+function pourById(id){
+  return pours().find(x=>x.id===id);
+}
+
+function selectedIds(){
+
+  const out=new Set();
+
+  document
+    .querySelectorAll(
+      'input[type="checkbox"]:checked'
+    )
+    .forEach(el=>{
+
+      const id=
+        el.dataset.slipId ||
+        el.dataset.id ||
+        el.value;
+
+      if(
+        id &&
+        /^[0-9a-f-]{30,}$/i.test(id)
+      )
+        out.add(id);
+
+    });
+
+  return [...out];
+}
+
+function slipClass(slip){
+
+  if(!slip)
+    return '';
+
+  if(slip.concrete_class)
+    return normalizeConcreteClass(
+      slip.concrete_class
+    );
+
+  const pour=
+    slip.pour_id
+      ? pourById(slip.pour_id)
+      : null;
+
+  return normalizeConcreteClass(
+    pour?.concrete_class || ''
+  );
+}
+
+function automaticPrice(slip){
+
+  return priceFor(
+    slipClass(slip)
+  );
+
+}
+
+function patchV13PriceLogic(){
+
+  const v13=
+    window.ORYVEXBetonCariV13;
+
+  if(!v13)
+    return;
+
+  v13.priceForClass=priceFor;
+  v13.normalizeConcreteClass=
+    normalizeConcreteClass;
+  v13.automaticPriceForSlip=
+    automaticPrice;
+
+}
+
+function updateRows(){
+
+  patchV13PriceLogic();
+
+  document
+    .querySelectorAll('tbody tr')
+    .forEach(row=>{
+
+      const cb=
+        row.querySelector(
+          'input[type="checkbox"]'
+        );
+
+      if(!cb)
+        return;
+
+      const id=
+        cb.dataset.slipId ||
+        cb.dataset.id ||
+        cb.value;
+
+      const slip=slipById(id);
+
+      if(!slip)
+        return;
+
+      const cls=slipClass(slip);
+      const price=automaticPrice(slip);
+
+      row.dataset.concreteClass=cls;
+      row.dataset.unitPrice=
+        String(price||0);
+
+      const cell=
+        row.querySelector(
+          '.oryvex-v13-cari-cell'
+        );
+
+      if(cell){
+
+        const existing=
+          cell.querySelector(
+            '.oryvex-v14-auto-price'
+          );
+
+        if(existing)
+          existing.remove();
+
+        const info=
+          document.createElement('div');
+
+        info.className=
+          'oryvex-v14-auto-price';
+
+        info.style.marginTop='5px';
+        info.style.fontSize='11px';
+
+        if(price>0){
+
+          info.innerHTML=
+            '<span class="oryvex-v14-auto">'+
+            cls+
+            ' · '+
+            money(price)+
+            '/m³'+
+            '</span>';
+
+        }
+        else{
+
+          info.innerHTML=
+            '<span style="color:#fb7185">'+
+            (
+              cls
+                ? cls+' için fiyat tanımlı değil'
+                : 'Beton sınıfı gerekli'
+            )+
+            '</span>';
+
+        }
+
+        cell.appendChild(info);
+      }
+
+    });
+
+}
+
+const observer=
+  new MutationObserver(()=>{
+
+    clearTimeout(
+      window.__ORYVEX_V14_TIMER
+    );
+
+    window.__ORYVEX_V14_TIMER=
+      setTimeout(
+        updateRows,
+        100
+      );
+
+  });
+
+function boot(){
+
+  patchV13PriceLogic();
+
+  observer.observe(
+    document.body,
+    {
+      childList:true,
+      subtree:true
+    }
+  );
+
+  setTimeout(updateRows,300);
+  setTimeout(updateRows,1000);
+
+}
+
+if(document.readyState==='loading')
+  document.addEventListener(
+    'DOMContentLoaded',
+    boot
+  );
 else
   boot();
 
