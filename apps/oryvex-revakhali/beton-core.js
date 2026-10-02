@@ -1,3 +1,4 @@
+/* ORYVEX_BETON_ZEMIN_V14_4 */
 (() => {
 'use strict';
 
@@ -802,6 +803,7 @@ function applyGroupDefaults(){
     cost.value='Çevre İşleri';
   }else if([
     'Grobeton',
+    'Zemin',
     'Temel',
     'Perde',
     'Kolon',
