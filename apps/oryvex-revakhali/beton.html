@@ -1332,6 +1332,286 @@ td small{
   const a=document.getElementById('oryvexCariLink');
   if(a && id) a.href='cari.html?id='+encodeURIComponent(id);
 })();
+
+/* ORYVEX_V14_3_REPORT_CARI */
+function v143SelectedIds(){
+  const v13=window.ORYVEXBetonCariV13;
+
+  if(
+    v13 &&
+    typeof v13.getSelectedIds==='function'
+  ){
+    return v13.getSelectedIds();
+  }
+
+  return [];
+}
+
+function v143Slip(id){
+  const v13=window.ORYVEXBetonCariV13;
+
+  if(!v13 || !(v13.slips instanceof Map))
+    return null;
+
+  return v13.slips.get(id) || null;
+}
+
+function v143CariState(slip){
+  const v13=window.ORYVEXBetonCariV13;
+
+  if(
+    v13 &&
+    typeof v13.cariStateForSlip==='function'
+  ){
+    return v13.cariStateForSlip(slip);
+  }
+
+  return {
+    code:'ERROR',
+    label:'Cari durumu okunamadı'
+  };
+}
+
+function v143Amount(slip){
+  const v13=window.ORYVEXBetonCariV13;
+
+  if(
+    v13 &&
+    typeof v13.amountForSlip==='function'
+  ){
+    return Number(v13.amountForSlip(slip)||0);
+  }
+
+  return 0;
+}
+
+function v143UpdateReportCari(){
+  const btn=
+    document.getElementById('cariTransferBtn');
+
+  const summary=
+    document.getElementById('reportSelectionSummary');
+
+  const note=
+    document.getElementById('cariIntegrationNote');
+
+  if(!btn)
+    return;
+
+  const ids=v143SelectedIds();
+
+  let ready=0;
+  let blocked=0;
+  let transferred=0;
+  let totalM3=0;
+  let totalAmount=0;
+
+  ids.forEach(id=>{
+    const slip=v143Slip(id);
+
+    if(!slip)
+      return;
+
+    totalM3+=Number(slip.quantity_m3||0);
+
+    const st=v143CariState(slip);
+
+    if(st.code==='READY'){
+      ready++;
+      totalAmount+=v143Amount(slip);
+    }
+    else if(st.code==='TRANSFERRED'){
+      transferred++;
+    }
+    else{
+      blocked++;
+    }
+  });
+
+  btn.disabled=
+    !ids.length ||
+    !ready ||
+    blocked>0 ||
+    transferred>0;
+
+  if(summary){
+    summary.textContent=
+      'Seçili: '+ids.length+
+      ' fiş · '+
+      totalM3.toLocaleString(
+        'tr-TR',
+        {maximumFractionDigits:3}
+      )+
+      ' m³';
+  }
+
+  if(note){
+    if(!ids.length){
+      note.textContent=
+        'Cariye aktarmak için fiş seçin.';
+    }
+    else if(transferred>0){
+      note.textContent=
+        transferred+
+        ' seçili fiş daha önce cariye aktarılmış.';
+    }
+    else if(blocked>0){
+      note.textContent=
+        blocked+
+        ' seçili fiş henüz aktarıma hazır değil. '+
+        'Önce sınıflandırma ve fiyat durumunu tamamlayın.';
+    }
+    else if(ready>0){
+      note.textContent=
+        ready+
+        ' fiş cariye hazır · Tahmini toplam '+
+        new Intl.NumberFormat(
+          'tr-TR',
+          {
+            style:'currency',
+            currency:'TRY'
+          }
+        ).format(totalAmount);
+    }
+  }
+}
+
+async function v143Transfer(){
+  const v13=window.ORYVEXBetonCariV13;
+
+  if(
+    !v13 ||
+    typeof v13.transferSelected!=='function'
+  ){
+    alert(
+      'Beton → Cari aktarım motoru hazır değil.'
+    );
+    return;
+  }
+
+  await v13.transferSelected();
+
+  setTimeout(
+    v143UpdateReportCari,
+    100
+  );
+}
+
+function v143BindReportCari(){
+  const btn=
+    document.getElementById('cariTransferBtn');
+
+  if(
+    btn &&
+    btn.dataset.v143Bound!=='1'
+  ){
+    btn.dataset.v143Bound='1';
+
+    btn.addEventListener(
+      'click',
+      v143Transfer
+    );
+  }
+
+  const selectVisible=
+    document.getElementById('selectVisibleBtn');
+
+  if(
+    selectVisible &&
+    selectVisible.dataset.v143Bound!=='1'
+  ){
+    selectVisible.dataset.v143Bound='1';
+
+    selectVisible.addEventListener(
+      'click',
+      ()=>{
+        setTimeout(
+          v143UpdateReportCari,
+          0
+        );
+      }
+    );
+  }
+
+  const selectAll=
+    document.getElementById('reportSelectAll');
+
+  if(
+    selectAll &&
+    selectAll.dataset.v143Bound!=='1'
+  ){
+    selectAll.dataset.v143Bound='1';
+
+    selectAll.addEventListener(
+      'change',
+      ()=>{
+        setTimeout(
+          v143UpdateReportCari,
+          0
+        );
+      }
+    );
+  }
+
+  v143UpdateReportCari();
+}
+
+document.addEventListener(
+  'change',
+  e=>{
+    if(
+      e.target instanceof HTMLInputElement &&
+      e.target.type==='checkbox'
+    ){
+      setTimeout(
+        v143UpdateReportCari,
+        0
+      );
+    }
+  }
+);
+
+document.addEventListener(
+  'DOMContentLoaded',
+  ()=>{
+    setTimeout(
+      v143BindReportCari,
+      350
+    );
+
+    setTimeout(
+      v143BindReportCari,
+      1200
+    );
+  }
+);
+
+const v143Observer=
+  new MutationObserver(()=>{
+    clearTimeout(
+      window.__ORYVEX_V143_TIMER
+    );
+
+    window.__ORYVEX_V143_TIMER=
+      setTimeout(
+        ()=>{
+          v143BindReportCari();
+          v143UpdateReportCari();
+        },
+        120
+      );
+  });
+
+if(document.body){
+  v143Observer.observe(
+    document.body,
+    {
+      childList:true,
+      subtree:true
+    }
+  );
+}
+
 </script>
 </main>
 
@@ -1368,6 +1648,15 @@ const V13 = {
 };
 
 window.ORYVEXBetonCariV13 = V13;
+
+/* ORYVEX_V14_3_CARI_BRIDGE */
+V13.getSelectedIds = selectedIds;
+V13.updateToolbar = updateToolbar;
+V13.transferSelected = transferSelected;
+V13.refreshCari = refresh;
+V13.cariStateForSlip = cariState;
+V13.amountForSlip = amountFor;
+
 
 function q(id){
   return document.getElementById(id);
