@@ -706,9 +706,111 @@ async function savePour(e){
   await reload();
 }
 
+
+/* ORYVEX_BETON_RECEIPT_V15_1 */
+
+function betonReceiptSafeName(name){
+  return String(name || 'beton-fisi.jpg')
+    .normalize('NFKD')
+    .replace(/[^\w.\-]+/g,'_')
+    .replace(/_+/g,'_')
+    .slice(-120);
+}
+
+async function uploadBetonReceipt(file){
+  if(!file) return null;
+
+  if(!session?.user?.id){
+    throw new Error('Fiş fotoğrafı yüklemek için yetkili oturum gerekli.');
+  }
+
+  if(!/^image\/(jpeg|png|webp)$/i.test(file.type || '')){
+    throw new Error('Fiş fotoğrafı JPEG, PNG veya WEBP olmalı.');
+  }
+
+  if(Number(file.size || 0) > 10 * 1024 * 1024){
+    throw new Error('Fiş fotoğrafı en fazla 10 MB olabilir.');
+  }
+
+  const uid=session.user.id;
+  const safe=betonReceiptSafeName(file.name);
+  const path=
+    uid+
+    '/beton-fisleri/'+
+    projectId+'/'+
+    Date.now()+'-'+
+    safe;
+
+  const {data,error}=await sb.storage
+    .from('santiye-photos')
+    .upload(path,file,{
+      cacheControl:'3600',
+      upsert:false,
+      contentType:file.type
+    });
+
+  if(error) throw error;
+
+  return {
+    bucket:'santiye-photos',
+    path:data?.path || path
+  };
+}
+
+async function removeBetonReceipt(storagePath){
+  if(!storagePath) return;
+
+  try{
+    await sb.storage
+      .from('santiye-photos')
+      .remove([storagePath]);
+  }catch(e){
+    console.warn('Beton fiş fotoğrafı rollback uyarısı:',e);
+  }
+}
+
+async function registerBetonReceiptPhoto(storagePath,slipNo){
+  if(!storagePath) return null;
+
+  const payload={
+    project_id:projectId,
+    storage_path:storagePath,
+    caption:'Beton Fişi · '+String(slipNo || ''),
+    created_by:session.user.id
+  };
+
+  const {data,error}=await sb
+    .from('santiye_photos')
+    .insert(payload)
+    .select('id,storage_path')
+    .single();
+
+  if(error) throw error;
+
+  return data;
+}
+
+async function unregisterBetonReceiptPhoto(photoId){
+  if(!photoId) return;
+
+  try{
+    await sb
+      .from('santiye_photos')
+      .delete()
+      .eq('id',photoId);
+  }catch(e){
+    console.warn('Beton foto kayıt rollback uyarısı:',e);
+  }
+}
+
 async function saveSlip(e){
-  if(!betonGuardWriteAction()) return;
   e.preventDefault();
+
+  if(!session?.user?.id){
+    $('slipMsg').textContent=
+      'Beton fişi kaydetmek için yetkili oturum gerekli.';
+    return;
+  }
 
   const f=new FormData(e.currentTarget);
 
@@ -719,51 +821,178 @@ async function saveSlip(e){
     slip_no:String(f.get('slip_no') || '').trim(),
     slip_date:String(f.get('slip_date') || ''),
     quantity_m3:num(f.get('quantity_m3')),
-    concrete_class:String(f.get('concrete_class') || '').trim() || null,
-    supplier_name:String(f.get('supplier_name') || '').trim() || null,
-    vehicle_plate:String(f.get('vehicle_plate') || '').trim() || null,
-    driver_name:String(f.get('driver_name') || '').trim() || null,
-    production_start:String(f.get('production_start') || '').trim() || null,
-    production_finish:String(f.get('production_finish') || '').trim() || null,
-    printed_site_name:String(f.get('printed_site_name') || '').trim() || null,
-    actual_site_name:String(f.get('actual_site_name') || '').trim() ||
+    concrete_class:
+      String(f.get('concrete_class') || '').trim() || null,
+    supplier_name:
+      String(f.get('supplier_name') || '').trim() || null,
+    vehicle_plate:
+      String(f.get('vehicle_plate') || '').trim() || null,
+    driver_name:
+      String(f.get('driver_name') || '').trim() || null,
+    production_start:
+      String(f.get('production_start') || '').trim() || null,
+    production_finish:
+      String(f.get('production_finish') || '').trim() || null,
+    printed_site_name:
+      String(f.get('printed_site_name') || '').trim() || null,
+    actual_site_name:
+      String(f.get('actual_site_name') || '').trim() ||
       'TAŞPAZAR CAMİİ ŞANTİYESİ',
-    raw_note:String(f.get('raw_note') || '').trim() || null,
+    receipt_file_url:null,
+    raw_note:
+      String(f.get('raw_note') || '').trim() || null,
     created_by:session.user.id
   };
 
   if(!row.slip_no || !row.slip_date || row.quantity_m3<=0){
-    $('slipMsg').textContent='Fiş no, tarih ve miktar zorunlu.';
+    $('slipMsg').textContent=
+      'Fiş no, tarih ve miktar zorunlu.';
     return;
   }
+
+  const photoInput=
+    document.getElementById('betonReceiptPhoto');
+
+  const receiptFile=
+    photoInput?.files?.[0] || null;
+
+  let uploaded=null;
+  let photoRecord=null;
+  let insertedSlip=null;
 
   $('slipSaveBtn').disabled=true;
   $('slipSaveBtn').textContent='Kaydediliyor...';
 
-  const {error}=await sb.from('santiye_concrete_slips').insert(row);
+  try{
+    if(receiptFile){
+      $('slipMsg').textContent=
+        'Fiş fotoğrafı güvenli depoya yükleniyor...';
 
-  $('slipSaveBtn').disabled=false;
-  $('slipSaveBtn').textContent='Beton Fişini Kaydet';
+      uploaded=await uploadBetonReceipt(receiptFile);
 
-  if(error){
-    $('slipMsg').textContent=error.message;
-    return;
+      /*
+       * Private bucket kullanıldığı için burada public URL saklamıyoruz.
+       * receipt_file_url alanında storage path tutuluyor.
+       */
+      row.receipt_file_url=uploaded.path;
+    }
+
+    $('slipMsg').textContent='Beton fişi kaydediliyor...';
+
+    const {data,error}=await sb
+      .from('santiye_concrete_slips')
+      .insert(row)
+      .select('id,slip_no,receipt_file_url')
+      .single();
+
+    if(error) throw error;
+
+    insertedSlip=data;
+
+    if(uploaded?.path){
+      try{
+        photoRecord=
+          await registerBetonReceiptPhoto(
+            uploaded.path,
+            row.slip_no
+          );
+      }catch(photoError){
+        /*
+         * Fotoğraf okunabilirliğini garanti etmek için
+         * santiye_photos kaydı oluşmazsa işlemi geri al.
+         */
+        await sb
+          .from('santiye_concrete_slips')
+          .delete()
+          .eq('id',insertedSlip.id);
+
+        insertedSlip=null;
+
+        await removeBetonReceipt(uploaded.path);
+        uploaded=null;
+
+        throw new Error(
+          'Fiş fotoğrafı proje fotoğraf kaydına bağlanamadı: '+
+          (photoError?.message || photoError)
+        );
+      }
+    }
+
+    $('slipMsg').textContent=
+      receiptFile
+        ? 'Beton fişi ve fiş fotoğrafı kaydedildi. Sınıflandırma bekliyor.'
+        : 'Beton fişi kaydedildi ve sınıflandırılmamış havuza eklendi.';
+
+    e.currentTarget.reset();
+
+    const preview=
+      document.getElementById('betonReceiptPreviewWrap');
+
+    if(preview) preview.style.display='none';
+
+    const receiptStatus=
+      document.getElementById('betonReceiptStatus');
+
+    if(receiptStatus){
+      receiptStatus.textContent='Fotoğraf bekleniyor.';
+    }
+
+    $('slipDate').value=
+      new Date().toISOString().slice(0,10);
+
+    const supplier=
+      e.currentTarget.querySelector(
+        '[name="supplier_name"]'
+      );
+
+    const actual=
+      e.currentTarget.querySelector(
+        '[name="actual_site_name"]'
+      );
+
+    if(supplier){
+      supplier.value=
+        'EKS Göktaş Hazır Beton San. Tic. Ltd. Şti.';
+    }
+
+    if(actual){
+      actual.value=
+        'TAŞPAZAR CAMİİ ŞANTİYESİ';
+    }
+
+    await reload();
+
+  }catch(error){
+
+    console.error('Beton fişi kayıt hatası:',error);
+
+    /*
+     * Slip insert başarısız olduysa ama fotoğraf yüklenmişse
+     * orphan storage nesnesi bırakma.
+     */
+    if(!insertedSlip && uploaded?.path){
+      await removeBetonReceipt(uploaded.path);
+    }
+
+    /*
+     * Çok nadir durumda photo row oluşup sonraki adım hata verirse
+     * referans kaydını temizle.
+     */
+    if(!insertedSlip && photoRecord?.id){
+      await unregisterBetonReceiptPhoto(photoRecord.id);
+    }
+
+    $('slipMsg').textContent=
+      error?.message ||
+      'Beton fişi kaydedilemedi.';
+
+  }finally{
+
+    $('slipSaveBtn').disabled=false;
+    $('slipSaveBtn').textContent='Beton Fişini Kaydet';
   }
-
-  $('slipMsg').textContent='Beton fişi kaydedildi ve sınıflandırılmamış havuza eklendi.';
-
-  e.currentTarget.reset();
-
-  $('slipDate').value=new Date().toISOString().slice(0,10);
-
-  const supplier=e.currentTarget.querySelector('[name="supplier_name"]');
-  const actual=e.currentTarget.querySelector('[name="actual_site_name"]');
-
-  if(supplier) supplier.value='EKS Göktaş Hazır Beton San. Tic. Ltd. Şti.';
-  if(actual) actual.value='TAŞPAZAR CAMİİ ŞANTİYESİ';
-
-  await reload();
 }
+
 
 function updateScopePreview(){
   const scopeEl=$('assignScope');

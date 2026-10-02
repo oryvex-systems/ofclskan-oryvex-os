@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="tr">
 <head>
+<!-- ORYVEX_BETON_V15 -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Beton Takip · ORYVEX ŞANTİYE OS</title>
@@ -930,6 +931,30 @@ td small{
 }
 </style>
 
+
+<style id="ORYVEX_BETON_V15_STYLE">
+.v15-photo-panel{
+  margin:14px 0;
+  padding:16px;
+  border:1px solid #1a3c59;
+  border-radius:16px;
+  background:#081827;
+}
+.v15-photo-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:12px;
+  margin-bottom:12px;
+}
+.v15-photo-head strong{
+  font-size:18px;
+}
+#betonReceiptPhoto{
+  width:100%;
+}
+</style>
+
 </head>
 
 <body>
@@ -1095,9 +1120,43 @@ td small{
     <div id="msg" class="msg"></div>
 
     <details class="slip-entry">
-      <summary>＋ Yeni Beton Fişi Gir</summary>
+      <summary>＋ Beton Fiş Fotoğrafı Gir</summary>
 
       <form id="slipForm" class="form">
+<div class="v15-photo-panel" id="betonPhotoPanel">
+  <div class="v15-photo-head">
+    <div>
+      <strong>📷 Fiş Fotoğrafı Çek / Yükle</strong>
+      <div class="muted">
+        Fiş fotoğrafını ekle; sınıflandırma ve kısım bilgisiyle birlikte kayda hazırla.
+      </div>
+    </div>
+  </div>
+
+  <label>
+    Fiş Fotoğrafı
+    <input
+      id="betonReceiptPhoto"
+      name="receipt_photo"
+      type="file"
+      accept="image/jpeg,image/png,image/webp"
+      capture="environment"
+    >
+  </label>
+
+  <div id="betonReceiptPreviewWrap" style="display:none;margin-top:12px">
+    <img
+      id="betonReceiptPreview"
+      alt="Beton fişi önizleme"
+      style="display:block;max-width:100%;max-height:420px;border-radius:14px;border:1px solid #1a3550"
+    >
+  </div>
+
+  <div id="betonReceiptStatus" class="muted" style="margin-top:8px">
+    Fotoğraf bekleniyor.
+  </div>
+</div>
+
         <div>
           <label>Fiş No</label>
           <input name="slip_no" required>
@@ -2802,6 +2861,61 @@ else
 })();
 </script>
 
+
+<script id="ORYVEX_BETON_V15_PHOTO_PREVIEW">
+(function(){
+  function initBetonV15Photo(){
+    const input=document.getElementById('betonReceiptPhoto');
+    const wrap=document.getElementById('betonReceiptPreviewWrap');
+    const img=document.getElementById('betonReceiptPreview');
+    const status=document.getElementById('betonReceiptStatus');
+
+    if(!input || input.dataset.v15Bound==='1') return;
+
+    input.dataset.v15Bound='1';
+
+    input.addEventListener('change',()=>{
+      const file=input.files && input.files[0];
+
+      if(!file){
+        if(wrap) wrap.style.display='none';
+        if(status) status.textContent='Fotoğraf bekleniyor.';
+        return;
+      }
+
+      if(!/^image\/(jpeg|png|webp)$/i.test(file.type)){
+        input.value='';
+        if(wrap) wrap.style.display='none';
+        if(status) status.textContent='JPEG, PNG veya WEBP fotoğraf seç.';
+        return;
+      }
+
+      const url=URL.createObjectURL(file);
+
+      if(img){
+        img.onload=()=>URL.revokeObjectURL(url);
+        img.src=url;
+      }
+
+      if(wrap) wrap.style.display='block';
+
+      if(status){
+        const mb=(file.size/1024/1024).toFixed(2);
+        status.textContent=
+          'Fotoğraf hazır · '+file.name+' · '+mb+
+          ' MB · Kaydetmeden önce sınıflandırma ve kısım bilgisini kontrol et.';
+      }
+    });
+  }
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',initBetonV15Photo);
+  }else{
+    initBetonV15Photo();
+  }
+})();
+</script>
+
 </body>
 </html>
 
@@ -2810,10 +2924,10 @@ else
 
   <div class="beton-report-head">
     <div>
-      <h2>Beton Fiş Listesi / Raporlama</h2>
+      <h2>Beton Fiş Arama / Sınıflandırma</h2>
       <p>
-        Beton fişlerini filtrele, seç, çıktı al ve cari aktarım
-        durumunu takip et.
+        Beton fişlerini ara, filtrele, sınıflara ayır ve cari
+        durumlarını takip et.
       </p>
     </div>
 
