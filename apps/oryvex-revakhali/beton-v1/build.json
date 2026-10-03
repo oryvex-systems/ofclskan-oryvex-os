@@ -1,0 +1,10 @@
+{
+  "system": "ORYVEX BETON TAKIP V1.0",
+  "milestone": "M12",
+  "beton_source_sha": "a3dd204a78ecffece88670e51a9a55c98ee71a52",
+  "source_base_sha": "c3eb18100601048417fd549e4f51465a3ab96a5a",
+  "deployment_mode": "isolated-subpath",
+  "path": "/beton-v1/",
+  "automaticCariTransfer": false,
+  "manualFinancialApproval": true
+}

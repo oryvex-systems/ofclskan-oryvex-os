@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#07111f">
+<title>Cari Entegrasyonu — ORYVEX Beton</title>
+<link rel="stylesheet" href="./assets/app.css">
+<style>
+.m7{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px}
+.card{grid-column:span 6;background:var(--panel,#0d1b2d);border:1px solid var(--line,#20344d);border-radius:18px;padding:18px}
+.full{grid-column:1/-1}
+.state{padding:14px;border-radius:12px;background:#07111f;white-space:pre-wrap}
+button{padding:12px 16px;border:0;border-radius:10px;cursor:pointer}
+label{display:flex;gap:9px;align-items:center;margin:15px 0}
+@media(max-width:800px){.card{grid-column:1/-1}}
+</style>
+</head>
+
+<body>
+<main style="width:min(1100px,calc(100% - 28px));margin:30px auto">
+
+<header>
+<div style="opacity:.65">ORYVEX • BETON TAKİP V1.0 • M7</div>
+<h1>Cari Entegrasyon Merkezi</h1>
+<p>Cari aktarımı yalnız açık kullanıcı onayı ile çalışır.</p>
+</header>
+
+<section class="m7">
+
+<article class="card">
+<h2>Cari Güvenlik Durumu</h2>
+<div class="state">
+Otomatik Cari: KAPALI
+Production Transport: KAPALI
+Kullanıcı Onayı: ZORUNLU
+0014121: KORUMALI
+</div>
+</article>
+
+<article class="card">
+<h2>Transfer Akışı</h2>
+<div class="state">
+Sınıflandırılmış
+→ Fiyat belirlenmiş
+→ Cariye Hazır
+→ Kullanıcı onayı
+→ Cari adaptörü
+→ Sonuç
+→ Audit
+</div>
+</article>
+
+<article class="card full">
+<h2>Sentetik Test</h2>
+
+<p>
+Bu ekran production kaydı aktarmaz.
+M7 doğrulaması sentetik veri ve fixture transport kullanır.
+</p>
+
+<label>
+<input id="approval" type="checkbox">
+Cari aktarımını açıkça onaylıyorum
+</label>
+
+<button id="transfer" type="button">
+CARIYE AKTAR — SENTETİK TEST
+</button>
+
+<div
+ id="result"
+ class="state"
+ style="margin-top:14px">
+Henüz işlem yapılmadı.
+</div>
+
+</article>
+
+</section>
+</main>
+
+<script type="module">
+
+import {
+  CariAdapter
+} from "./adapters/cari-adapter.js";
+
+import {
+  createFixtureCariTransport
+} from "./adapters/cari-transport-fixture.js";
+
+import {
+  createMemoryAuditAdapter
+} from "./adapters/audit-memory.js";
+
+import {
+  transferToCari
+} from "./models/cari-service.js";
+
+const audit =
+  createMemoryAuditAdapter();
+
+const adapter =
+  new CariAdapter({
+    transport:
+      createFixtureCariTransport(),
+    audit
+  });
+
+document
+.getElementById("transfer")
+.addEventListener(
+  "click",
+  async () => {
+
+    const approved =
+      document
+      .getElementById("approval")
+      .checked;
+
+    try {
+
+      const result =
+        await transferToCari({
+          adapter,
+
+          slip: {
+            slipNo:
+              "M7-SYNTHETIC-001",
+            quantityM3: 8,
+            concreteClass:
+              "C20/25"
+          },
+
+          classification:
+            "PROJECT",
+
+          pourId:
+            "M7-SYNTHETIC-POUR",
+
+          supplierCode:
+            "EKS_GOKTAS",
+
+          cost: {
+            status:
+              "PRICED",
+            unitPrice:
+              2700,
+            amount:
+              21600,
+            currency:
+              "TRY",
+            tariffId:
+              "M7-SYNTHETIC-TARIFF"
+          },
+
+          projectId:
+            "M7-SYNTHETIC-PROJECT",
+
+          companyId:
+            "M7-SYNTHETIC-COMPANY",
+
+          approvedByUser:
+            approved
+        });
+
+      document
+      .getElementById("result")
+      .textContent =
+        JSON.stringify(
+          {
+            result,
+            audit:
+              audit.list()
+          },
+          null,
+          2
+        );
+
+    } catch (error) {
+
+      document
+      .getElementById("result")
+      .textContent =
+        `HATA: ${error.message}`;
+    }
+  }
+);
+
+</script>
+</body>
+</html>

@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#07111f">
+  <title>Beton Fiş Merkezi — ORYVEX</title>
+  <link rel="stylesheet" href="./assets/app.css">
+  <style>
+    .m45-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px}
+    .m45-card{grid-column:span 6;background:var(--panel,#0d1b2d);border:1px solid var(--line,#20344d);border-radius:18px;padding:18px}
+    .m45-card.full{grid-column:1/-1}
+    .m45-card h2{margin-top:0}
+    .m45-field{display:grid;gap:7px;margin-bottom:12px}
+    .m45-field label{font-size:.84rem;opacity:.75}
+    .m45-field input,.m45-field select,.m45-field textarea{width:100%;padding:11px;border-radius:10px;border:1px solid var(--line,#20344d);background:#07111f;color:inherit}
+    .m45-actions{display:flex;gap:10px;flex-wrap:wrap}
+    .m45-actions button{padding:11px 15px;border:0;border-radius:10px;cursor:pointer}
+    .m45-preview{min-height:180px;border:1px dashed var(--line,#20344d);border-radius:14px;display:grid;place-items:center;overflow:hidden}
+    .m45-preview img{max-width:100%;max-height:440px}
+    .m45-status{padding:12px;border-radius:10px;background:#07111f;margin-top:12px;white-space:pre-wrap}
+    @media(max-width:800px){.m45-card{grid-column:1/-1}}
+  </style>
+</head>
+<body>
+  <main style="width:min(1180px,calc(100% - 28px));margin:30px auto">
+    <header style="margin-bottom:24px">
+      <div style="opacity:.65">ORYVEX • BETON TAKİP V1.0</div>
+      <h1>Beton Fiş Merkezi</h1>
+      <p>Fiş fotoğrafı → okuma → kontrol → sınıflandırma → imalat/kısım → döküm taslağı.</p>
+    </header>
+
+    <section class="m45-grid">
+      <article class="m45-card">
+        <h2>1. Fiş Fotoğrafı</h2>
+        <div class="m45-field">
+          <label for="receipt-photo">Beton fişini çek veya seç</label>
+          <input id="receipt-photo" type="file" accept="image/jpeg,image/png,image/webp" capture="environment">
+        </div>
+        <div class="m45-preview" id="preview">Fotoğraf bekleniyor</div>
+        <div class="m45-actions" style="margin-top:12px">
+          <button id="read-receipt" type="button">Fişi Oku</button>
+        </div>
+        <div class="m45-status" id="vision-status">AI Vision: güvenli fixture modu</div>
+      </article>
+
+      <article class="m45-card">
+        <h2>2. Fiş Bilgileri</h2>
+
+        <div class="m45-field"><label>Fiş No</label><input id="slip-no"></div>
+        <div class="m45-field"><label>Tarih</label><input id="slip-date" type="date"></div>
+        <div class="m45-field"><label>Beton Sınıfı</label><input id="concrete-class" placeholder="C20/25"></div>
+        <div class="m45-field"><label>Miktar (m³)</label><input id="quantity" type="number" step="0.01"></div>
+        <div class="m45-field"><label>Tedarikçi</label><input id="supplier"></div>
+        <div class="m45-field"><label>Araç Plaka</label><input id="vehicle"></div>
+        <div class="m45-field"><label>Şoför</label><input id="driver"></div>
+        <div class="m45-field"><label>Basılı Şantiye</label><input id="printed-site"></div>
+      </article>
+
+      <article class="m45-card">
+        <h2>3. Sınıflandırma</h2>
+
+        <div class="m45-field">
+          <label>Sınıflandırma</label>
+          <select id="classification">
+            <option value="UNCLASSIFIED">UNCLASSIFIED — Atanacak</option>
+            <option value="PROJECT">PROJECT — Proje Betonu</option>
+            <option value="NON_PROJECT">NON_PROJECT — Proje Dışı</option>
+          </select>
+        </div>
+
+        <div class="m45-field">
+          <label>İmalat / Kısım</label>
+          <select id="work-item">
+            <option value="">Seçiniz</option>
+          </select>
+        </div>
+
+        <div class="m45-status" id="classification-status">
+          Sınıflandırma bekleniyor.
+        </div>
+      </article>
+
+      <article class="m45-card">
+        <h2>4. Döküm</h2>
+        <p>Miktar kullanıcı tarafından döküm toplamına yazılmaz. Kaynak beton fişleridir.</p>
+
+        <div class="m45-actions">
+          <button id="build-draft" type="button">Döküm / Kayıt Taslağını Hazırla</button>
+        </div>
+
+        <div class="m45-status" id="draft-status">
+          Taslak henüz hazırlanmadı.
+        </div>
+      </article>
+
+      <article class="m45-card full">
+        <h2>Finansal Güvenlik</h2>
+        <p><strong>Otomatik Cari aktarımı kapalıdır.</strong> Bu milestone production veritabanına yazmaz. Cari işlemi ayrıca kullanıcı onayı gerektirir.</p>
+      </article>
+    </section>
+  </main>
+
+<script type="module">
+import { createReceiptDraft } from "./models/receipt-model.js";
+import { buildReceiptWorkflow } from "./models/receipt-workflow.js";
+import { readReceiptWithVision } from "./adapters/receipt-vision.js";
+import { receiptVisionFixtureProvider } from "./adapters/receipt-vision-fixture.js";
+import { validateReceiptPhoto } from "./adapters/receipt-storage.js";
+import { loadWorkItems, resolveWorkItemMetadata } from "./adapters/work-items.js";
+
+const $ = (id) => document.getElementById(id);
+
+let selectedFile = null;
+let workItems = [];
+
+function itemLabel(item) {
+  return item.label ?? item.name ?? item.title ?? item.id ?? item.code ?? "İmalat";
+}
+
+function itemValue(item) {
+  return item.id ?? item.code ?? item.name ?? item.label ?? "";
+}
+
+try {
+  workItems = await loadWorkItems();
+
+  for (const item of workItems) {
+    const option = document.createElement("option");
+    option.value = itemValue(item);
+    option.textContent = itemLabel(item);
+    $("work-item").appendChild(option);
+  }
+} catch (error) {
+  $("classification-status").textContent =
+    `İmalat sözlüğü yüklenemedi: ${error.message}`;
+}
+
+$("receipt-photo").addEventListener("change", (event) => {
+  selectedFile = event.target.files?.[0] ?? null;
+
+  if (!selectedFile) return;
+
+  const validation = validateReceiptPhoto(selectedFile);
+
+  if (!validation.valid) {
+    $("vision-status").textContent = validation.error;
+    selectedFile = null;
+    return;
+  }
+
+  const url = URL.createObjectURL(selectedFile);
+  $("preview").innerHTML = "";
+
+  const img = document.createElement("img");
+  img.src = url;
+  img.alt = "Beton fişi önizleme";
+  $("preview").appendChild(img);
+
+  $("vision-status").textContent =
+    "Fotoğraf hazır. Fişi Oku ile kontrol akışını başlat.";
+});
+
+$("read-receipt").addEventListener("click", async () => {
+  if (!selectedFile) {
+    $("vision-status").textContent = "Önce fiş fotoğrafı seç.";
+    return;
+  }
+
+  const result = await readReceiptWithVision(
+    selectedFile,
+    receiptVisionFixtureProvider
+  );
+
+  $("vision-status").textContent =
+    result.reviewRequired
+      ? `Manuel kontrol gerekli. Confidence: ${Math.round(result.confidence * 100)}%. Eksik: ${result.missing.join(", ")}`
+      : `Okuma tamamlandı. Confidence: ${Math.round(result.confidence * 100)}%`;
+
+  const f = result.fields;
+
+  if (f.slipNo) $("slip-no").value = f.slipNo;
+  if (f.date) $("slip-date").value = f.date;
+  if (f.concreteClass) $("concrete-class").value = f.concreteClass;
+  if (f.quantityM3) $("quantity").value = f.quantityM3;
+  if (f.supplier) $("supplier").value = f.supplier;
+  if (f.vehiclePlate) $("vehicle").value = f.vehiclePlate;
+  if (f.driver) $("driver").value = f.driver;
+  if (f.printedSite) $("printed-site").value = f.printedSite;
+});
+
+$("classification").addEventListener("change", () => {
+  $("classification-status").textContent =
+    `Seçim: ${$("classification").value}`;
+});
+
+$("build-draft").addEventListener("click", () => {
+  try {
+    const receipt = createReceiptDraft({
+      slipNo: $("slip-no").value,
+      date: $("slip-date").value,
+      concreteClass: $("concrete-class").value,
+      quantityM3: $("quantity").value,
+      supplier: $("supplier").value,
+      vehiclePlate: $("vehicle").value,
+      driver: $("driver").value,
+      printedSite: $("printed-site").value
+    });
+
+    const selected = workItems.find(
+      (item) => String(itemValue(item)) === String($("work-item").value)
+    ) ?? null;
+
+    const meta = resolveWorkItemMetadata(selected);
+
+    const workflow = buildReceiptWorkflow({
+      receipt,
+      classification: $("classification").value,
+      workItem: meta.workItem,
+      workGroup: meta.workGroup,
+      costCenter: meta.costCenter,
+      projectId: "62e1d67f-c1c5-47e1-9aec-e2d79e6c08cf",
+      companyId: "f5408082-74e7-4d2a-a7e9-12ed8dca7641"
+    });
+
+    $("draft-status").textContent =
+      JSON.stringify(workflow, null, 2);
+
+  } catch (error) {
+    $("draft-status").textContent = `HATA: ${error.message}`;
+  }
+});
+</script>
+</body>
+</html>
