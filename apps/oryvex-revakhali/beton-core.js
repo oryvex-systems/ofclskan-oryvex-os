@@ -1718,727 +1718,466 @@ function loadLocalDemo(){
 }
 
 
-/* ORYVEX_BETON_V101A_REPORT_ENGINE */
+/* ORYVEX_BETON_SEARCH_CENTER_V15_3_ENGINE */
+const ORYVEXBetonReport=(()=>{
+  const PAGE_SIZE=50;
+  const selectedRows=new Set();
+  let source=[];
+  let filtered=[];
+  let transfers=new Map();
+  let page=1;
+  let photoObjectUrl=null;
 
-const ORYVEXBetonReport = (() => {
+  const q=id=>document.getElementById(id);
+  const txt=v=>String(v??'');
+  const norm=v=>txt(v).toLocaleLowerCase('tr-TR').trim();
+  const number=v=>{const n=Number(v);return Number.isFinite(n)?n:0;};
+  const html=v=>txt(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const money=v=>new Intl.NumberFormat('tr-TR',{style:'currency',currency:'TRY',minimumFractionDigits:2,maximumFractionDigits:2}).format(number(v));
+  const m3text=v=>new Intl.NumberFormat('tr-TR',{minimumFractionDigits:0,maximumFractionDigits:3}).format(number(v))+' m³';
 
-  let source = [];
-  let filtered = [];
-  const selected = new Set();
+  function pourMap(){return new Map(pours.map(p=>[String(p.id),p]));}
+  function pourFor(slip){return slip?.pour_id?pourMap().get(String(slip.pour_id))||null:null;}
 
-  const $r = id => document.getElementById(id);
-
-  function esc(value){
-    return String(value ?? '')
-      .replaceAll('&','&amp;')
-      .replaceAll('<','&lt;')
-      .replaceAll('>','&gt;')
-      .replaceAll('"','&quot;')
-      .replaceAll("'","&#039;");
-  }
-
-  function norm(value){
-    return String(value ?? '')
-      .toLocaleLowerCase('tr-TR')
-      .trim();
-  }
-
-  function num(value){
-    const n = Number(value);
-    return Number.isFinite(n) ? n : 0;
-  }
-
-  function slipScope(slip){
-    if(
-      !slip.pour_id ||
-      !slip.pour ||
-      !slip.pour.scope_type
-    ){
-      return 'UNCLASSIFIED';
-    }
-
-    return String(slip.pour.scope_type).toUpperCase();
-  }
-
-  function slipWorkGroup(slip){
-    return slip?.pour?.work_group || '';
-  }
-
-  function slipWorkItem(slip){
-    return slip?.pour?.work_item || '';
-  }
-
-  function slipCostCenter(slip){
-    return slip?.pour?.cost_center || '';
-  }
-
-  function cariState(slip){
-    /*
-      V10.1A:
-      Gerçek cari transfer tablosu henüz bağlanmadı.
-
-      UNCLASSIFIED -> BLOCKED
-      PROJECT/NON_PROJECT -> READY
-
-      V10.1B gerçek aktarım tablosunu bulunca
-      TRANSFERRED durumu source_id üzerinden okunacak.
-    */
-
-    const scope = slipScope(slip);
-
-    if(scope === 'UNCLASSIFIED'){
-      return 'BLOCKED';
-    }
-
-    return 'READY';
+  function scopeFor(slip){
+    const pour=pourFor(slip);
+    if(!slip?.pour_id||!pour) return 'UNCLASSIFIED';
+    const scope=txt(pour.scope_type).toUpperCase();
+    return scope==='PROJECT'||scope==='NON_PROJECT'?scope:'UNCLASSIFIED';
   }
 
   function scopeLabel(scope){
-    switch(scope){
-      case 'PROJECT':
-        return 'Proje Betonu';
-
-      case 'NON_PROJECT':
-        return 'Proje Dışı';
-
-      default:
-        return 'Sınıflandırılmamış';
-    }
+    if(scope==='PROJECT') return 'Proje Betonu';
+    if(scope==='NON_PROJECT') return 'Proje Dışı';
+    return 'Sınıflandırılmamış';
   }
 
-  function cariLabel(state){
-    switch(state){
-      case 'TRANSFERRED':
-        return 'Aktarıldı';
-
-      case 'READY':
-        return 'Aktarıma Hazır';
-
-      default:
-        return 'Sınıflandırma Bekliyor';
-    }
+  function scopeClass(scope){
+    if(scope==='PROJECT') return 'v153-project';
+    if(scope==='NON_PROJECT') return 'v153-nonproject';
+    return 'v153-unclassified';
   }
 
-  function badgeScope(scope){
-    if(scope === 'PROJECT') return 'project';
-    if(scope === 'NON_PROJECT') return 'non-project';
-    return 'unclassified';
+  function normalizedClass(value){
+    const v=txt(value).toUpperCase().trim().replaceAll(' ','').replaceAll('-','/').replaceAll('_','/');
+    if(v.startsWith('C16')) return 'C16';
+    if(v.startsWith('C20/25')||(v.startsWith('C20')&&v.includes('25'))) return 'C20/25';
+    if(v.startsWith('C30/35')||(v.startsWith('C30')&&v.includes('35'))) return 'C30/35';
+    return v;
   }
 
-  function badgeCari(state){
-    if(state === 'READY') return 'ready';
-    if(state === 'TRANSFERRED') return 'ready';
-    return 'blocked';
+  function unitPrice(slip){
+    const cls=normalizedClass(slip?.concrete_class||pourFor(slip)?.concrete_class||'');
+    const prices=window.ORYVEXConcretePriceV14?.prices||{'C16':2600,'C20/25':2700,'C30/35':2800};
+    return number(prices[cls]);
   }
 
-  function matches(slip){
+  function transferFor(slip){return transfers.get(String(slip.id))||null;}
 
-    const from = $r('filterDateFrom')?.value || '';
-    const to = $r('filterDateTo')?.value || '';
+  function cariState(slip){
+    if(transferFor(slip)) return {code:'TRANSFERRED',label:'Cariye Aktarıldı',className:'v153-transferred'};
+    if(scopeFor(slip)==='UNCLASSIFIED') return {code:'UNCLASSIFIED',label:'Sınıflandırma Bekliyor',className:'v153-unclassified'};
+    if(!(unitPrice(slip)>0)) return {code:'PRICE_WAITING',label:'Fiyat Bekliyor',className:'v153-price'};
+    return {code:'READY',label:'Cariye Hazır',className:'v153-ready'};
+  }
 
-    const slipNo =
-      norm($r('filterSlipNo')?.value);
+  async function loadTransfers(){
+    transfers=new Map();
+    if(!session?.user?.id||!projectId) return;
+    const {data,error}=await sb.from('santiye_account_transactions')
+      .select('id,source_id,source_type,amount,unit_price,cost_center,supplier_name,created_at')
+      .eq('project_id',projectId)
+      .eq('source_type','CONCRETE_SLIP')
+      .order('created_at',{ascending:false});
+    if(error) throw error;
+    (data||[]).forEach(row=>{
+      if(row.source_id&&!transfers.has(String(row.source_id))) transfers.set(String(row.source_id),row);
+    });
+  }
 
-    const supplier =
-      norm($r('filterSupplier')?.value);
+  function filters(){
+    return {
+      from:q('v153DateFrom')?.value||'',
+      to:q('v153DateTo')?.value||'',
+      slipNo:norm(q('v153SlipNo')?.value),
+      supplier:norm(q('v153Supplier')?.value),
+      concrete:norm(q('v153ConcreteClass')?.value),
+      scope:q('v153Scope')?.value||'',
+      group:norm(q('v153WorkGroup')?.value),
+      item:norm(q('v153WorkItem')?.value),
+      cost:norm(q('v153CostCenter')?.value),
+      cari:q('v153CariStatus')?.value||''
+    };
+  }
 
-    const concreteClass =
-      norm($r('filterConcreteClass')?.value);
-
-    const scope =
-      $r('filterScope')?.value || '';
-
-    const workGroup =
-      norm($r('filterWorkGroup')?.value);
-
-    const costCenter =
-      norm($r('filterCostCenter')?.value);
-
-    const cari =
-      $r('filterCariStatus')?.value || '';
-
-    const date =
-      String(slip.slip_date || '');
-
-    if(from && date < from) return false;
-    if(to && date > to) return false;
-
-    if(
-      slipNo &&
-      !norm(slip.slip_no).includes(slipNo)
-    ) return false;
-
-    if(
-      supplier &&
-      !norm(slip.supplier_name).includes(supplier)
-    ) return false;
-
-    if(
-      concreteClass &&
-      !norm(slip.concrete_class).includes(concreteClass)
-    ) return false;
-
-    if(
-      scope &&
-      slipScope(slip) !== scope
-    ) return false;
-
-    if(
-      workGroup &&
-      !norm(slipWorkGroup(slip)).includes(workGroup)
-    ) return false;
-
-    if(
-      costCenter &&
-      !norm(slipCostCenter(slip)).includes(costCenter)
-    ) return false;
-
-    if(
-      cari &&
-      cariState(slip) !== cari
-    ) return false;
-
+  function matches(slip,f){
+    const date=txt(slip.slip_date).slice(0,10);
+    if(f.from&&date<f.from) return false;
+    if(f.to&&date>f.to) return false;
+    if(f.slipNo&&!norm(slip.slip_no).includes(f.slipNo)) return false;
+    if(f.supplier&&!norm(slip.supplier_name).includes(f.supplier)) return false;
+    if(f.concrete&&!norm(slip.concrete_class||pourFor(slip)?.concrete_class).includes(f.concrete)) return false;
+    if(f.scope&&scopeFor(slip)!==f.scope) return false;
+    const pour=pourFor(slip);
+    if(f.group&&!norm(pour?.work_group).includes(f.group)) return false;
+    if(f.item&&!norm(pour?.work_item).includes(f.item)) return false;
+    if(f.cost&&!norm(pour?.cost_center).includes(f.cost)) return false;
+    if(f.cari&&cariState(slip).code!==f.cari) return false;
     return true;
   }
 
-  function applyFilters(){
-    filtered = source.filter(matches);
+  function filterSummary(){
+    const f=filters(),parts=[];
+    if(f.from) parts.push('Başlangıç: '+f.from);
+    if(f.to) parts.push('Bitiş: '+f.to);
+    if(f.slipNo) parts.push('Fiş No: '+q('v153SlipNo').value);
+    if(f.supplier) parts.push('Tedarikçi: '+q('v153Supplier').value);
+    if(f.concrete) parts.push('Beton: '+q('v153ConcreteClass').value);
+    if(f.scope) parts.push('Sınıflandırma: '+f.scope);
+    if(f.group) parts.push('İş Grubu: '+q('v153WorkGroup').value);
+    if(f.item) parts.push('İmalat: '+q('v153WorkItem').value);
+    if(f.cost) parts.push('Maliyet Merkezi: '+q('v153CostCenter').value);
+    if(f.cari) parts.push('Cari: '+q('v153CariStatus').selectedOptions[0]?.textContent);
+    return parts.length?parts.join(' · '):'Aktif filtre: Tümü';
+  }
 
-    render();
+  function reconcileSelection(){
+    const allowed=new Set(filtered.map(s=>String(s.id)));
+    [...selectedRows].forEach(id=>{if(!allowed.has(id)) selectedRows.delete(id);});
+  }
+
+  function renderSummary(){
+    const t=totals();
+    if(q('v153Planned')) q('v153Planned').textContent=m3text(planned);
+    if(q('v153Project')) q('v153Project').textContent=m3text(t.projectM3);
+    if(q('v153NonProject')) q('v153NonProject').textContent=m3text(t.outsideM3);
+    if(q('v153Unclassified')) q('v153Unclassified').textContent=m3text(t.unclassifiedM3);
+    if(q('v153Total')) q('v153Total').textContent=m3text(t.total);
+    if(q('v153Remaining')) q('v153Remaining').textContent=m3text(t.remaining);
+    if(q('v153Usage')) q('v153Usage').textContent='%'+t.pct.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  }
+
+  function currentRows(){
+    const start=(page-1)*PAGE_SIZE;
+    return filtered.slice(start,start+PAGE_SIZE);
+  }
+
+  function renderTable(){
+    const body=q('v153Body');
+    if(!body) return;
+    const rows=currentRows();
+
+    if(!rows.length){
+      body.innerHTML='<tr><td colspan="16" class="v153-empty">Filtrelere uygun beton fişi bulunamadı.</td></tr>';
+      return;
+    }
+
+    body.innerHTML=rows.map(slip=>{
+      const id=String(slip.id);
+      const pour=pourFor(slip);
+      const scope=scopeFor(slip);
+      const cari=cariState(slip);
+      const price=unitPrice(slip);
+      const amount=price*number(slip.quantity_m3);
+      const hasPhoto=!!txt(slip.receipt_file_url).trim();
+      const classified=scope!=='UNCLASSIFIED';
+      return '<tr data-v153-slip="'+html(id)+'">'+
+        '<td class="v153-no-print"><input class="v153-slip-check" type="checkbox" data-slip-id="'+html(id)+'" aria-label="Fiş '+html(slip.slip_no)+' seç" '+(selectedRows.has(id)?'checked':'')+'></td>'+
+        '<td><strong>'+html(slip.slip_no)+'</strong></td>'+
+        '<td>'+html(trDate(slip.slip_date))+'</td>'+
+        '<td>'+html(slip.supplier_name||'—')+'</td>'+
+        '<td>'+html(slip.concrete_class||pour?.concrete_class||'—')+'</td>'+
+        '<td><strong>'+html(number(slip.quantity_m3).toLocaleString('tr-TR',{maximumFractionDigits:3}))+'</strong></td>'+
+        '<td>'+html(slip.vehicle_plate||'—')+(slip.driver_name?'<small>'+html(slip.driver_name)+'</small>':'')+'</td>'+
+        '<td>'+html(pour?.work_group||'—')+'</td>'+
+        '<td>'+html(pour?.work_item||'—')+'</td>'+
+        '<td>'+html(pour?.cost_center||'—')+'</td>'+
+        '<td><span class="v153-badge '+scopeClass(scope)+'">'+html(scopeLabel(scope))+'</span>'+(classified?'<span class="v153-already">Zaten sınıflandırılmış</span>':'')+'</td>'+
+        '<td>'+html(price>0?money(price)+' / m³':'—')+'</td>'+
+        '<td>'+html(price>0?money(amount):'—')+'</td>'+
+        '<td><span class="v153-badge '+cari.className+'">'+html(cari.label)+'</span></td>'+
+        '<td>'+(hasPhoto?'<button type="button" class="v153-photo-btn v153-no-print" data-v153-photo="'+html(id)+'">Fişi Gör</button>':'<span class="v153-photo-none">Fotoğraf Yok</span>')+'</td>'+
+        '<td class="v153-no-print">'+(classified?'<span class="v153-already">Korumalı</span>':'<span class="muted">Sınıflandırılabilir</span>')+'</td>'+
+      '</tr>';
+    }).join('');
+
+    body.querySelectorAll('.v153-slip-check').forEach(cb=>{
+      cb.addEventListener('change',()=>{
+        const id=String(cb.dataset.slipId||'');
+        if(cb.checked) selectedRows.add(id); else selectedRows.delete(id);
+        renderSelection();
+      });
+    });
+    body.querySelectorAll('[data-v153-photo]').forEach(btn=>btn.addEventListener('click',()=>openPhoto(btn.dataset.v153Photo)));
+  }
+
+  function renderPagination(){
+    const pages=Math.max(1,Math.ceil(filtered.length/PAGE_SIZE));
+    if(page>pages) page=pages;
+    if(q('v153ResultCount')) q('v153ResultCount').textContent=filtered.length+' fiş';
+    if(q('v153PageInfo')) q('v153PageInfo').textContent='Sayfa '+page+' / '+pages+' · Toplam '+filtered.length+' kayıt';
+    if(q('v153PrevBtn')) q('v153PrevBtn').disabled=page<=1;
+    if(q('v153NextBtn')) q('v153NextBtn').disabled=page>=pages;
+  }
+
+  function selectedSlips(){return source.filter(s=>selectedRows.has(String(s.id)));}
+
+  function renderSelection(){
+    const chosen=selectedSlips();
+    const canWrite=!!session?.user?.id;
+    const classifyBlocked=chosen.some(s=>scopeFor(s)!=='UNCLASSIFIED');
+    const classifyReady=chosen.length>0&&!classifyBlocked;
+
+    if(q('v153Selection')) q('v153Selection').textContent=chosen.length+' fiş seçildi · '+m3text(chosen.reduce((sum,s)=>sum+number(s.quantity_m3),0));
+    if(q('v153SelectionNote')){
+      q('v153SelectionNote').textContent=
+        !canWrite?'Canlı yazma işlemleri için yetkili oturum gerekli.':
+        classifyBlocked?'Seçimde zaten sınıflandırılmış fiş var; toplu sınıflandırma kilitli.':
+        chosen.length?'Seçim toplu sınıflandırmaya uygun.':'';
+    }
+    if(q('v153ClassifyBtn')) q('v153ClassifyBtn').disabled=!canWrite||!classifyReady;
+
+    const states=chosen.map(cariState);
+    const allReady=chosen.length>0&&states.every(st=>st.code==='READY');
+    if(q('v153CariBtn')) q('v153CariBtn').disabled=!canWrite||!allReady;
+    if(q('v153CariReason')){
+      q('v153CariReason').textContent=
+        !canWrite?'Canlı Cari aktarımı için yetkili oturum gerekli.':
+        !chosen.length?'Cariye aktarmak için uygun fiş seçin.':
+        states.some(st=>st.code==='TRANSFERRED')?'Seçimde daha önce cariye aktarılmış fiş var.':
+        states.some(st=>st.code==='UNCLASSIFIED')?'Seçimde sınıflandırma bekleyen fiş var.':
+        states.some(st=>st.code==='PRICE_WAITING')?'Seçimde fiyat bekleyen fiş var.':
+        allReady?'Tüm seçili fişler Cariye Hazır.':'Seçim Cari aktarımına uygun değil.';
+    }
+
+    const all=q('v153SelectAll');
+    if(all){
+      const ids=filtered.map(s=>String(s.id));
+      all.checked=ids.length>0&&ids.every(id=>selectedRows.has(id));
+      all.indeterminate=ids.some(id=>selectedRows.has(id))&&!all.checked;
+    }
   }
 
   function render(){
+    renderSummary();
+    renderTable();
+    renderPagination();
+    renderSelection();
+    if(q('v153PrintFilterSummary')) q('v153PrintFilterSummary').textContent=filterSummary();
+  }
 
-    const body = $r('betonReportBody');
+  function applyFilters(){
+    filtered=source.filter(slip=>matches(slip,filters()));
+    page=1;
+    reconcileSelection();
+    render();
+  }
 
-    if(!body) return;
+  function clearFilters(){
+    ['v153DateFrom','v153DateTo','v153SlipNo','v153Supplier','v153ConcreteClass','v153Scope','v153WorkGroup','v153WorkItem','v153CostCenter','v153CariStatus']
+      .forEach(id=>{if(q(id)) q(id).value='';});
+    filtered=[...source];
+    page=1;
+    reconcileSelection();
+    render();
+  }
 
-    $r('reportCount').textContent =
-      `${filtered.length} fiş`;
+  function toggleAll(checked){
+    filtered.forEach(slip=>{const id=String(slip.id);if(checked) selectedRows.add(id);else selectedRows.delete(id);});
+    render();
+  }
 
-    if(!filtered.length){
-      body.innerHTML = `
-        <tr>
-          <td colspan="14" class="empty">
-            Filtreye uygun beton fişi bulunamadı.
-          </td>
-        </tr>
-      `;
+  function applyGroupDefaults(){
+    const group=q('v153AssignWorkGroup')?.value||'';
+    const scope=q('v153AssignScope');
+    const cost=q('v153AssignCostCenter');
+    if(!scope||!cost) return;
+    if(group==='Kule Vinç'){scope.value='NON_PROJECT';cost.value='Kule Vinç';}
+    else if(group==='Mobilizasyon'){scope.value='NON_PROJECT';cost.value='Mobilizasyon';}
+    else if(group==='Çevre İşleri'){scope.value='PROJECT';cost.value='Çevre İşleri';}
+    else if(['Zemin','Grobeton','Temel','Perde','Kolon','Kiriş','Döşeme','Merdiven','Kubbe','Minare'].includes(group)){
+      scope.value='PROJECT';cost.value='Kaba İnşaat';
+    }
+  }
 
-      updateSelection();
-
+  async function classify(){
+    const chosen=selectedSlips();
+    if(!chosen.length) return;
+    if(chosen.some(s=>scopeFor(s)!=='UNCLASSIFIED')){
+      alert('Zaten sınıflandırılmış fişler yeniden sınıflandırılamaz.');
       return;
     }
 
-    body.innerHTML = filtered.map(slip => {
+    const scope=q('v153AssignScope')?.value||'UNCLASSIFIED';
+    const group=txt(q('v153AssignWorkGroup')?.value).trim();
+    const item=txt(q('v153AssignWorkItem')?.value).trim();
+    const cost=txt(q('v153AssignCostCenter')?.value).trim();
 
-      const scope = slipScope(slip);
-      const cari = cariState(slip);
+    if(scope==='UNCLASSIFIED'||!group||!item||!cost){
+      q('v153SelectionNote').textContent='Sınıflandırma, iş grubu, imalat ve maliyet merkezi zorunlu.';
+      return;
+    }
 
-      const checked =
-        selected.has(String(slip.id))
-          ? 'checked'
-          : '';
+    const totalM3=chosen.reduce((sum,s)=>sum+number(s.quantity_m3),0);
+    const ok=confirm('TOPLU SINIFLANDIRMA\n\nFiş sayısı: '+chosen.length+'\nToplam: '+m3text(totalM3)+'\nSınıflandırma: '+scope+'\nİş Grubu: '+group+'\nİmalat: '+item+'\nMaliyet Merkezi: '+cost+'\n\nDevam edilsin mi?');
+    if(!ok) return;
 
-      return `
-        <tr data-report-slip-id="${esc(slip.id)}">
-
-          <td class="no-print">
-            <input
-              type="checkbox"
-              class="report-slip-check"
-              data-id="${esc(slip.id)}"
-              ${checked}>
-          </td>
-
-          <td>
-            <strong>${esc(slip.slip_no)}</strong>
-          </td>
-
-          <td>
-            ${esc(slip.slip_date)}
-          </td>
-
-          <td>
-            <strong>${num(slip.quantity_m3).toFixed(3)} m³</strong>
-          </td>
-
-          <td>
-            ${esc(slip.concrete_class)}
-          </td>
-
-          <td>
-            ${esc(slip.supplier_name)}
-          </td>
-
-          <td>
-            ${esc(slip.vehicle_plate)}
-            <br>
-            <small>${esc(slip.driver_name)}</small>
-          </td>
-
-          <td>
-            ${esc(slip.printed_site_name)}
-          </td>
-
-          <td>
-            ${esc(slip.actual_site_name)}
-          </td>
-
-          <td>
-            <span class="beton-report-badge ${badgeScope(scope)}">
-              ${esc(scopeLabel(scope))}
-            </span>
-          </td>
-
-          <td>
-            ${esc(slipWorkGroup(slip) || '—')}
-          </td>
-
-          <td>
-            ${esc(slipWorkItem(slip) || '—')}
-          </td>
-
-          <td>
-            ${esc(slipCostCenter(slip) || '—')}
-          </td>
-
-          <td>
-            <span class="beton-report-badge ${badgeCari(cari)}">
-              ${esc(cariLabel(cari))}
-            </span>
-          </td>
-
-        </tr>
-      `;
-    }).join('');
-
-    body
-      .querySelectorAll('.report-slip-check')
-      .forEach(check => {
-
-        check.addEventListener('change', () => {
-
-          const id = String(check.dataset.id);
-
-          if(check.checked){
-            selected.add(id);
-          }else{
-            selected.delete(id);
-          }
-
-          updateSelection();
-        });
+    const btn=q('v153ClassifyBtn');
+    if(btn){btn.disabled=true;btn.textContent='Sınıflandırılıyor...';}
+    try{
+      const {data,error}=await sb.rpc('santiye_classify_concrete_slips',{
+        p_project_id:projectId,
+        p_slip_ids:chosen.map(s=>s.id),
+        p_scope_type:scope,
+        p_work_group:group,
+        p_work_item:item,
+        p_cost_center:cost
       });
-
-    updateSelection();
-  }
-
-  function selectedSlips(){
-    return source.filter(
-      slip => selected.has(String(slip.id))
-    );
-  }
-
-  function updateSelection(){
-
-    const slips = selectedSlips();
-
-    const total =
-      slips.reduce(
-        (sum, slip) =>
-          sum + num(slip.quantity_m3),
-        0
-      );
-
-    const summary =
-      $r('reportSelectionSummary');
-
-    if(summary){
-      summary.textContent =
-        `Seçili: ${slips.length} fiş · ${total.toFixed(3)} m³`;
-    }
-
-    const cariButton =
-      $r('cariTransferBtn');
-
-    if(cariButton){
-
-      const ready =
-        slips.length > 0 &&
-        slips.every(
-          slip => cariState(slip) === 'READY'
-        );
-
-      cariButton.disabled = !ready;
-
-      if(!slips.length){
-        cariButton.title =
-          'Önce beton fişi seç.';
-      }else if(!ready){
-        cariButton.title =
-          'Sınıflandırılmamış fiş cariye aktarılamaz.';
-      }else{
-        cariButton.title =
-          'Cari entegrasyonu V10.1B ile bağlanacak.';
-      }
-    }
-
-    const all =
-      $r('reportSelectAll');
-
-    if(all){
-
-      const visibleIds =
-        filtered.map(
-          slip => String(slip.id)
-        );
-
-      all.checked =
-        visibleIds.length > 0 &&
-        visibleIds.every(
-          id => selected.has(id)
-        );
+      if(error) throw error;
+      if(!data||data.ok!==true) throw new Error('RPC geçerli sonuç döndürmedi.');
+      selectedRows.clear();
+      await reload();
+      await loadTransfers();
+      q('v153SelectionNote').textContent='Sınıflandırma tamamlandı.';
+    }catch(err){
+      console.error('V15.3 sınıflandırma:',err);
+      q('v153SelectionNote').textContent='Sınıflandırma tamamlanamadı. Bağlantı ve yetkiyi kontrol et.';
+    }finally{
+      if(btn) btn.textContent='Seçilenleri Sınıflandır';
+      renderSelection();
     }
   }
 
-  function resetFilters(){
+  async function transferCari(){
+    const chosen=selectedSlips();
+    if(!chosen.length) return;
+    await loadTransfers();
+    const states=chosen.map(cariState);
+    if(states.some(st=>st.code!=='READY')){
+      q('v153CariReason').textContent='Seçili fişlerin tamamı Cariye Hazır değil.';
+      renderSelection();
+      return;
+    }
 
-    [
-      'filterDateFrom',
-      'filterDateTo',
-      'filterSlipNo',
-      'filterSupplier',
-      'filterConcreteClass',
-      'filterScope',
-      'filterWorkGroup',
-      'filterCostCenter',
-      'filterCariStatus'
-    ].forEach(id => {
-
-      const el = $r(id);
-
-      if(el) el.value = '';
+    let totalM3=0,totalTL=0;
+    const suppliers=new Set(),costs=new Set();
+    chosen.forEach(slip=>{
+      totalM3+=number(slip.quantity_m3);
+      totalTL+=unitPrice(slip)*number(slip.quantity_m3);
+      if(slip.supplier_name) suppliers.add(slip.supplier_name);
+      const cost=pourFor(slip)?.cost_center;if(cost) costs.add(cost);
     });
 
-    applyFilters();
+    const ok=confirm('CARİYE AKTARIM\n\nFiş sayısı: '+chosen.length+'\nToplam m³: '+m3text(totalM3)+'\nToplam TL: '+money(totalTL)+'\nTedarikçi: '+([...suppliers].join(', ')||'—')+'\nMaliyet Merkezi: '+([...costs].join(', ')||'—')+'\n\nBu işlem cari borç hareketi oluşturacaktır. Devam edilsin mi?');
+    if(!ok) return;
+
+    const btn=q('v153CariBtn');
+    if(btn){btn.disabled=true;btn.textContent='Aktarılıyor...';}
+    try{
+      const {data,error}=await sb.rpc('santiye_transfer_concrete_slips_to_cari',{
+        p_project_id:projectId,
+        p_slip_ids:chosen.map(s=>s.id)
+      });
+      if(error) throw error;
+      selectedRows.clear();
+      await loadTransfers();
+      render();
+      q('v153CariReason').textContent='Cari aktarımı tamamlandı · '+number(data?.transferred_count||chosen.length)+' fiş.';
+    }catch(err){
+      console.error('V15.3 Cari:',err);
+      q('v153CariReason').textContent='Cari aktarımı tamamlanamadı. Bağlantı ve yetkiyi kontrol et.';
+    }finally{
+      if(btn) btn.textContent='Seçilenleri Cariye Aktar';
+      renderSelection();
+    }
   }
 
-  function selectVisible(){
-
-    filtered.forEach(
-      slip => selected.add(String(slip.id))
-    );
-
-    render();
-  }
-
-  function toggleVisible(checked){
-
-    filtered.forEach(slip => {
-
-      const id = String(slip.id);
-
-      if(checked){
-        selected.add(id);
-      }else{
-        selected.delete(id);
-      }
-    });
-
-    render();
-  }
-
-  function csvEscape(value){
-
-    const text =
-      String(value ?? '');
-
-    return `"${text.replaceAll('"','""')}"`;
-  }
+  function csvEscape(value){return '"'+txt(value).replaceAll('"','""')+'"';}
 
   function exportCSV(){
-
-    const rows =
-      selected.size
-        ? selectedSlips()
-        : filtered;
-
-    if(!rows.length){
-      alert('Çıktı alınacak beton fişi bulunamadı.');
-      return;
-    }
-
-    const header = [
-      'Fiş No',
-      'Tarih',
-      'Miktar m3',
-      'Beton Sınıfı',
-      'Tedarikçi',
-      'Araç',
-      'Şoför',
-      'Fişteki Yer',
-      'Gerçek Şantiye',
-      'Sınıflandırma',
-      'İş Grubu',
-      'İmalat / Kullanım Yeri',
-      'Masraf Merkezi',
-      'Cari Durumu'
-    ];
-
-    const data = rows.map(slip => {
-
-      const scope =
-        slipScope(slip);
-
-      const cari =
-        cariState(slip);
-
-      return [
-        slip.slip_no,
-        slip.slip_date,
-        num(slip.quantity_m3).toFixed(3),
-        slip.concrete_class,
-        slip.supplier_name,
-        slip.vehicle_plate,
-        slip.driver_name,
-        slip.printed_site_name,
-        slip.actual_site_name,
-        scopeLabel(scope),
-        slipWorkGroup(slip),
-        slipWorkItem(slip),
-        slipCostCenter(slip),
-        cariLabel(cari)
-      ];
+    if(!filtered.length){alert('Dışa aktarılacak beton fişi bulunamadı.');return;}
+    const header=['Fiş No','Tarih','Tedarikçi','Beton Sınıfı','Miktar','Araç','Şoför','İş Grubu','İmalat','Maliyet Merkezi','Sınıflandırma','Birim Fiyat','Tutar','Cari Durumu'];
+    const rows=filtered.map(slip=>{
+      const pour=pourFor(slip),scope=scopeFor(slip),price=unitPrice(slip),cari=cariState(slip);
+      return [slip.slip_no,slip.slip_date,slip.supplier_name,slip.concrete_class||pour?.concrete_class,number(slip.quantity_m3).toFixed(3),slip.vehicle_plate,slip.driver_name,pour?.work_group,pour?.work_item,pour?.cost_center,scopeLabel(scope),price>0?price.toFixed(2):'',price>0?(price*number(slip.quantity_m3)).toFixed(2):'',cari.label];
     });
-
-    const csv =
-      '\ufeff' +
-      [header,...data]
-        .map(
-          row =>
-            row.map(csvEscape).join(';')
-        )
-        .join('\r\n');
-
-    const blob =
-      new Blob(
-        [csv],
-        {
-          type:
-            'text/csv;charset=utf-8'
-        }
-      );
-
-    const url =
-      URL.createObjectURL(blob);
-
-    const a =
-      document.createElement('a');
-
-    a.href = url;
-
-    const today =
-      new Date()
-        .toISOString()
-        .slice(0,10);
-
-    a.download =
-      `ORYVEX-Beton-Fisleri-${today}.csv`;
-
-    document.body.appendChild(a);
-
-    a.click();
-
-    a.remove();
-
-    URL.revokeObjectURL(url);
+    const csv='\ufeff'+[header,...rows].map(row=>row.map(csvEscape).join(';')).join('\r\n');
+    const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+    const url=URL.createObjectURL(blob),a=document.createElement('a');
+    a.href=url;a.download='taspazar-beton-fisleri-'+new Date().toISOString().slice(0,10)+'.csv';
+    document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
   }
 
   function printReport(){
-
-    if(!filtered.length){
-      alert('Yazdırılacak beton fişi bulunamadı.');
-      return;
-    }
-
+    if(!filtered.length){alert('Yazdırılacak beton fişi bulunamadı.');return;}
     window.print();
   }
 
-  function cariTransfer(){
+  async function openPhoto(id){
+    const slip=source.find(s=>String(s.id)===String(id));
+    const path=txt(slip?.receipt_file_url).trim();
+    if(!path){alert('Bu fişte fotoğraf bulunmuyor.');return;}
+    if(!session?.user?.id){alert('Fiş fotoğrafını görmek için yetkili oturum gerekli.');return;}
 
-    const slips =
-      selectedSlips();
-
-    if(!slips.length){
-      alert('Önce beton fişi seç.');
-      return;
+    const modal=q('v153PhotoModal'),img=q('v153PhotoImage'),status=q('v153PhotoStatus');
+    if(!modal||!img||!status) return;
+    modal.hidden=false;img.hidden=true;status.textContent='Fotoğraf yükleniyor...';
+    try{
+      const {data,error}=await sb.storage.from('santiye-photos').createSignedUrl(path,60);
+      if(error) throw error;
+      if(!data?.signedUrl) throw new Error('Signed URL üretilemedi.');
+      img.src=data.signedUrl;img.hidden=false;status.textContent='Güvenli bağlantı 60 saniye geçerlidir.';
+    }catch(err){
+      console.error('V15.3 fotoğraf:',err);
+      status.textContent='Fotoğraf açılamadı. Yetki veya bağlantıyı kontrol et.';
     }
+  }
 
-    const blocked =
-      slips.filter(
-        slip =>
-          cariState(slip) !== 'READY'
-      );
-
-    if(blocked.length){
-      alert(
-        'Sınıflandırılmamış beton fişi cariye aktarılamaz.'
-      );
-
-      return;
-    }
-
-    /*
-      V10.1A güvenlik:
-      Henüz canlı cari tablosu bilinmediği için
-      INSERT / RPC YAPMIYORUZ.
-    */
-
-    alert(
-      'Cari aktarım altyapısı hazır. ' +
-      'Mevcut Cari Takip tablosu doğrulandıktan sonra ' +
-      'V10.1B ile gerçek aktarım açılacak.'
-    );
+  function closePhoto(){
+    const modal=q('v153PhotoModal'),img=q('v153PhotoImage');
+    if(modal) modal.hidden=true;
+    if(img){img.src='';img.hidden=true;}
   }
 
   function bind(){
+    if(q('betonSearchCenter')?.dataset.v153Bound==='1') return;
+    if(q('betonSearchCenter')) q('betonSearchCenter').dataset.v153Bound='1';
 
-    [
-      'filterDateFrom',
-      'filterDateTo',
-      'filterSlipNo',
-      'filterSupplier',
-      'filterConcreteClass',
-      'filterScope',
-      'filterWorkGroup',
-      'filterCostCenter',
-      'filterCariStatus'
-    ].forEach(id => {
-
-      const el = $r(id);
-
-      if(!el) return;
-
-      el.addEventListener(
-        el.tagName === 'SELECT'
-          ? 'change'
-          : 'input',
-        applyFilters
-      );
+    q('v153FilterBtn')?.addEventListener('click',applyFilters);
+    q('v153ClearBtn')?.addEventListener('click',clearFilters);
+    q('v153CsvBtn')?.addEventListener('click',exportCSV);
+    q('v153PrintBtn')?.addEventListener('click',printReport);
+    q('v153NewSlipBtn')?.addEventListener('click',()=>{
+      const entry=q('betonPhotoPanel');if(entry){entry.scrollIntoView({behavior:'smooth',block:'center'});q('betonReceiptPhoto')?.focus();}
     });
-
-    $r('filterResetBtn')
-      ?.addEventListener(
-        'click',
-        resetFilters
-      );
-
-    $r('selectVisibleBtn')
-      ?.addEventListener(
-        'click',
-        selectVisible
-      );
-
-    $r('reportSelectAll')
-      ?.addEventListener(
-        'change',
-        e =>
-          toggleVisible(
-            e.target.checked
-          )
-      );
-
-    $r('printBetonBtn')
-      ?.addEventListener(
-        'click',
-        printReport
-      );
-
-    $r('csvBetonBtn')
-      ?.addEventListener(
-        'click',
-        exportCSV
-      );
-
-    $r('cariTransferBtn')
-      ?.addEventListener(
-        'click',
-        cariTransfer
-      );
+    q('v153SelectAll')?.addEventListener('change',e=>toggleAll(e.target.checked));
+    q('v153AssignWorkGroup')?.addEventListener('change',applyGroupDefaults);
+    q('v153ClassifyBtn')?.addEventListener('click',classify);
+    q('v153CariBtn')?.addEventListener('click',transferCari);
+    q('v153PrevBtn')?.addEventListener('click',()=>{if(page>1){page--;render();}});
+    q('v153NextBtn')?.addEventListener('click',()=>{const pages=Math.max(1,Math.ceil(filtered.length/PAGE_SIZE));if(page<pages){page++;render();}});
+    q('v153PhotoClose')?.addEventListener('click',closePhoto);
+    q('v153PhotoModal')?.addEventListener('click',e=>{if(e.target===q('v153PhotoModal')) closePhoto();});
+    document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!q('v153PhotoModal')?.hidden) closePhoto();});
   }
 
-  function setData(slips){
-
-    source =
-      Array.isArray(slips)
-        ? slips
-        : [];
-
-    /*
-      Mevcut beton-core.js farklı veri yapıları
-      kullanıyorsa pour ilişkisini normalize ediyoruz.
-    */
-
-    source = source.map(slip => {
-
-      if(slip.pour){
-        return slip;
-      }
-
-      if(
-        slip.pours &&
-        !slip.pour
-      ){
-        return {
-          ...slip,
-          pour: slip.pours
-        };
-      }
-
-      return slip;
-    });
-
-    applyFilters();
+  async function setData(rows){
+    source=Array.isArray(rows)?[...rows]:[];
+    await loadTransfers().catch(err=>console.warn('V15.3 Cari durumları okunamadı:',err?.message||err));
+    filtered=source.filter(slip=>matches(slip,filters()));
+    reconcileSelection();
+    render();
   }
 
-  function init(){
-
+  async function init(){
     bind();
-
-    /*
-      beton-core.js içindeki global slips değişkeni
-      mevcutsa ilk veriyi al.
-    */
-
-    try{
-
-      if(
-        typeof slips !== 'undefined' &&
-        Array.isArray(slips)
-      ){
-        setData(slips);
-      }else{
-        render();
-      }
-
-    }catch(_){
-      render();
-    }
+    await setData(slips);
   }
 
-  return {
-    init,
-    setData,
-    applyFilters,
-    selectedSlips
-  };
-
+  return {init,setData,applyFilters,selectedSlips,refreshCari:loadTransfers,cariStateForSlip:cariState,unitPrice};
 })();
 
-window.ORYVEXBetonReport =
-  ORYVEXBetonReport;
-
+window.ORYVEXBetonReport=ORYVEXBetonReport;
 
 /* ORYVEX_V101A_REPORT_SYNC */
 function syncBetonReportData(){
@@ -2634,7 +2373,12 @@ async function boot(){
 
 window.ORYVEXConcrete={
   boot,
-  reload
+  reload,
+  sb,
+  get slips(){ return slips; },
+  get pours(){ return pours; },
+  get selectedSlips(){ return selected; },
+  get state(){ return {slips,pours,planned,projectId,companyId}; }
 };
 
 })();

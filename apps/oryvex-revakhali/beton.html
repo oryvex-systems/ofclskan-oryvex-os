@@ -2,6 +2,7 @@
 <html lang="tr">
 <head>
 <!-- ORYVEX_BETON_V15_2 -->
+<!-- ORYVEX_BETON_V15_3 -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Beton Takip · ORYVEX ŞANTİYE OS</title>
@@ -967,6 +968,84 @@ td small{
 @media(max-width:650px){.v15-vision-actions,.v15-confidence-grid{grid-template-columns:1fr}}
 </style>
 
+
+<style id="ORYVEX_BETON_V15_3_STYLE">
+.v153-center{margin-top:18px}
+.v153-title-row{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:14px}
+.v153-title-row h2{font-size:clamp(20px,3vw,30px);margin:0 0 5px}
+.v153-count{white-space:nowrap;padding:7px 11px;border:1px solid #2b4c68;border-radius:999px;color:#c7d5e6;font-size:12px;font-weight:900}
+.v153-summary{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;margin:12px 0 16px}
+.v153-summary-card{padding:11px;border:1px solid #1d3b57;border-radius:13px;background:#091827}
+.v153-summary-card span{display:block;color:var(--muted);font-size:10px;min-height:28px}
+.v153-summary-card strong{display:block;font-size:17px;margin-top:4px}
+.v153-filter-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px}
+.v153-filter-grid label{display:flex;flex-direction:column;gap:5px}
+.v153-filter-actions,.v153-action-row,.v153-pagination{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px}
+.v153-filter-actions button,.v153-action-row button,.v153-pagination button{width:auto;min-height:42px;padding:8px 14px}
+.v153-secondary{background:#12263b;color:#eaf2ff;border:1px solid #284966}
+.v153-cari{background:#f59e0b;color:#07111f}
+.v153-classify-panel{margin:16px 0;padding:14px;border:1px solid #234661;border-radius:15px;background:#0a1b2c}
+.v153-classify-panel h3{margin:0 0 4px;font-size:16px}
+.v153-classify-grid{display:grid;grid-template-columns:1fr 1fr 1.2fr 1fr auto;gap:9px;align-items:end;margin-top:10px}
+.v153-classify-grid button{width:auto;min-width:190px}
+.v153-selection{margin-top:10px;color:#c7d5e6;font-size:12px;font-weight:800}
+.v153-selection-note{margin-top:5px;color:var(--muted);font-size:11px;min-height:16px}
+.v153-table-wrap{overflow:auto;border:1px solid #183550;border-radius:14px;margin-top:12px}
+.v153-table{width:100%;min-width:1770px;border-collapse:collapse;background:#091726}
+.v153-table th,.v153-table td{padding:9px 8px;border-bottom:1px solid #17314c;text-align:left;vertical-align:top;font-size:11px;line-height:1.35}
+.v153-table th{background:#0d1d2f;color:#a9b8ca;position:sticky;top:0;z-index:1}
+.v153-table input[type="checkbox"]{width:18px;height:18px;accent-color:var(--orange)}
+.v153-badge{display:inline-flex;align-items:center;min-height:24px;padding:3px 8px;border:1px solid #34516c;border-radius:999px;font-size:10px;font-weight:900;white-space:nowrap}
+.v153-project{background:#12372a;color:#bbf7d0}
+.v153-nonproject{background:#3a1820;color:#fecaca}
+.v153-unclassified{background:#3a2c0d;color:#fde68a}
+.v153-price{background:#3b2610;color:#fbd38d}
+.v153-ready{background:#12372a;color:#bbf7d0}
+.v153-transferred{background:#142f50;color:#bfdbfe}
+.v153-photo-btn{width:auto;min-height:36px;padding:7px 10px;background:#102b43;color:#fff;border:1px solid #2b4c68}
+.v153-photo-none{color:var(--muted);font-size:11px}
+.v153-already{display:block;color:#93c5fd;font-size:10px;font-weight:900;margin-top:4px}
+.v153-empty{text-align:center;color:var(--muted);padding:24px!important}
+.v153-page-info{color:var(--muted);font-size:12px;font-weight:800}
+.v153-print-filter{display:none}
+.v153-modal{position:fixed;inset:0;z-index:10020;background:rgba(1,8,15,.88);display:flex;align-items:center;justify-content:center;padding:20px}
+.v153-modal[hidden]{display:none}
+.v153-modal-card{width:min(1100px,100%);max-height:94vh;overflow:auto;background:#07111f;border:1px solid #31516d;border-radius:18px;padding:14px}
+.v153-modal-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px}
+.v153-modal-head button{width:auto;min-width:42px}
+.v153-modal img{display:block;max-width:100%;max-height:78vh;margin:auto;border-radius:12px}
+@media(max-width:1100px){
+  .v153-filter-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .v153-summary{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .v153-classify-grid{grid-template-columns:1fr 1fr}
+  .v153-classify-grid .v153-classify-action{grid-column:1/-1}
+  .v153-classify-grid button{width:100%}
+}
+@media(max-width:650px){
+  .v153-title-row{flex-direction:column}
+  .v153-filter-grid,.v153-summary,.v153-classify-grid{grid-template-columns:1fr}
+  .v153-filter-actions button,.v153-action-row button,.v153-pagination button{width:100%}
+}
+@media print{
+  body{background:#fff!important;color:#000!important}
+  body *{visibility:hidden!important}
+  #betonSearchCenter,#betonSearchCenter *{visibility:visible!important}
+  #betonSearchCenter{position:absolute;inset:0;margin:0;padding:0;border:0;background:#fff!important;color:#000!important}
+  #betonSearchCenter .v153-filter-grid,
+  #betonSearchCenter .v153-filter-actions,
+  #betonSearchCenter .v153-classify-panel,
+  #betonSearchCenter .v153-action-row,
+  #betonSearchCenter .v153-pagination,
+  #betonSearchCenter .v153-no-print,
+  #betonSearchCenter .v153-photo-btn{display:none!important}
+  #betonSearchCenter .v153-print-filter{display:block!important;margin:10px 0;font-size:10px}
+  #betonSearchCenter .v153-table-wrap{overflow:visible;border:0}
+  #betonSearchCenter .v153-table{min-width:0;width:100%;font-size:8px}
+  #betonSearchCenter .v153-table th,#betonSearchCenter .v153-table td{color:#000!important;background:#fff!important;border-color:#bbb!important;padding:4px;font-size:8px}
+  #betonSearchCenter .v153-badge{color:#000!important;background:#fff!important;border:1px solid #777!important}
+}
+</style>
+
 </head>
 
 <body>
@@ -1379,6 +1458,143 @@ td small{
     </table>
   </div>
 </section>
+
+
+
+<!-- ORYVEX_BETON_SEARCH_CENTER_V15_3 -->
+<section class="card section v153-center" id="betonSearchCenter">
+  <div class="v153-title-row">
+    <div>
+      <div class="eyebrow">ORYVEX · V15.3</div>
+      <h2>BETON FİŞ ARAMA / SINIFLANDIRMA MERKEZİ</h2>
+      <div class="muted">Beton fişlerini ara, filtrele, sınıflara ayır ve cari durumlarını takip et.</div>
+    </div>
+    <div id="v153ResultCount" class="v153-count">0 fiş</div>
+  </div>
+
+  <div class="v153-summary" aria-label="Proje beton özeti">
+    <div class="v153-summary-card"><span>Planlanan Beton</span><strong id="v153Planned">0 m³</strong></div>
+    <div class="v153-summary-card"><span>Proje Betonu</span><strong id="v153Project">0 m³</strong></div>
+    <div class="v153-summary-card"><span>Proje Dışı Beton</span><strong id="v153NonProject">0 m³</strong></div>
+    <div class="v153-summary-card"><span>Sınıflandırılmamış</span><strong id="v153Unclassified">0 m³</strong></div>
+    <div class="v153-summary-card"><span>Toplam Teslim</span><strong id="v153Total">0 m³</strong></div>
+    <div class="v153-summary-card"><span>Kalan Beton</span><strong id="v153Remaining">0 m³</strong></div>
+    <div class="v153-summary-card"><span>Kullanım %</span><strong id="v153Usage">%0,00</strong></div>
+  </div>
+
+  <div id="v153PrintFilterSummary" class="v153-print-filter"></div>
+
+  <div class="v153-filter-grid">
+    <label>Başlangıç Tarihi<input id="v153DateFrom" type="date"></label>
+    <label>Bitiş Tarihi<input id="v153DateTo" type="date"></label>
+    <label>Fiş No<input id="v153SlipNo" type="search" placeholder="Örn. 14121"></label>
+    <label>Tedarikçi<input id="v153Supplier" type="search" placeholder="Tedarikçi ara"></label>
+    <label>Beton Sınıfı<input id="v153ConcreteClass" type="search" placeholder="C20/25"></label>
+
+    <label>Sınıflandırma
+      <select id="v153Scope">
+        <option value="">Tümü</option>
+        <option value="PROJECT">PROJECT / Proje-İmalat Betonu</option>
+        <option value="NON_PROJECT">NON_PROJECT / Proje Dışı-Şantiye Gideri</option>
+        <option value="UNCLASSIFIED">UNCLASSIFIED / Sınıflandırılmamış</option>
+      </select>
+    </label>
+
+    <label>İş Grubu / Kısım<input id="v153WorkGroup" type="search" placeholder="Temel, Zemin..."></label>
+    <label>İmalat<input id="v153WorkItem" type="search" placeholder="İmalat / kullanım yeri"></label>
+    <label>Maliyet Merkezi<input id="v153CostCenter" type="search" placeholder="Kaba İnşaat..."></label>
+
+    <label>Cari Durumu
+      <select id="v153CariStatus">
+        <option value="">Tümü</option>
+        <option value="UNCLASSIFIED">Sınıflandırma Bekliyor</option>
+        <option value="PRICE_WAITING">Fiyat Bekliyor</option>
+        <option value="READY">Cariye Hazır</option>
+        <option value="TRANSFERRED">Cariye Aktarıldı</option>
+      </select>
+    </label>
+  </div>
+
+  <div class="v153-filter-actions">
+    <button id="v153FilterBtn" type="button">Filtrele</button>
+    <button id="v153ClearBtn" type="button" class="v153-secondary">Temizle</button>
+    <button id="v153CsvBtn" type="button" class="v153-secondary">CSV / Excel</button>
+    <button id="v153PrintBtn" type="button" class="v153-secondary">Yazdır</button>
+    <button id="v153NewSlipBtn" type="button" class="v153-secondary">Yeni Fiş</button>
+  </div>
+
+  <div class="v153-classify-panel">
+    <h3>TOPLU SINIFLANDIRMA</h3>
+    <div class="muted">Seçilen sınıflandırılmamış fişleri mevcut güvenli RPC ile sınıflandırır.</div>
+    <div class="v153-classify-grid">
+      <label>Sınıflandırma
+        <select id="v153AssignScope">
+          <option value="UNCLASSIFIED">Sınıflandırılmamış</option>
+          <option value="PROJECT">PROJECT / Proje-İmalat Betonu</option>
+          <option value="NON_PROJECT">NON_PROJECT / Proje Dışı-Şantiye Gideri</option>
+        </select>
+      </label>
+      <label>Kısım / İş Grubu
+        <select id="v153AssignWorkGroup">
+          <option value="">Seçiniz</option>
+          <option>Zemin</option><option>Grobeton</option><option>Temel</option><option>Perde</option>
+          <option>Kolon</option><option>Kiriş</option><option>Döşeme</option><option>Merdiven</option>
+          <option>Kubbe</option><option>Minare</option><option>Çevre İşleri</option>
+          <option>Mobilizasyon</option><option>Kule Vinç</option><option>Diğer</option>
+        </select>
+      </label>
+      <label>İmalat<input id="v153AssignWorkItem" type="text" placeholder="Örn. Radye Temel"></label>
+      <label>Maliyet Merkezi
+        <select id="v153AssignCostCenter">
+          <option value="">Seçiniz</option>
+          <option>Kaba İnşaat</option><option>Çevre İşleri</option><option>Mobilizasyon</option>
+          <option>Kule Vinç</option><option>Genel Gider</option><option>Diğer</option>
+        </select>
+      </label>
+      <div class="v153-classify-action">
+        <button id="v153ClassifyBtn" type="button" disabled>Seçilenleri Sınıflandır</button>
+      </div>
+    </div>
+    <div id="v153Selection" class="v153-selection">0 fiş seçildi</div>
+    <div id="v153SelectionNote" class="v153-selection-note"></div>
+  </div>
+
+  <div class="v153-action-row">
+    <button id="v153CariBtn" type="button" class="v153-cari" disabled>Seçilenleri Cariye Aktar</button>
+    <span id="v153CariReason" class="muted">Cariye aktarmak için uygun fiş seçin.</span>
+  </div>
+
+  <div class="v153-table-wrap">
+    <table class="v153-table" id="v153Table">
+      <thead>
+        <tr>
+          <th class="v153-no-print"><input id="v153SelectAll" type="checkbox" aria-label="Filtre sonucundaki uygun fişlerin tümünü seç"></th>
+          <th>Fiş No</th><th>Tarih</th><th>Tedarikçi</th><th>Beton</th><th>Miktar m³</th><th>Araç</th>
+          <th>Kısım / İş Grubu</th><th>İmalat</th><th>Maliyet Merkezi</th><th>Sınıflandırma</th>
+          <th>Birim Fiyat</th><th>Tutar</th><th>Cari Durumu</th><th>Fotoğraf</th><th class="v153-no-print">İşlem</th>
+        </tr>
+      </thead>
+      <tbody id="v153Body"><tr><td colspan="16" class="v153-empty">Beton fişleri yükleniyor...</td></tr></tbody>
+    </table>
+  </div>
+
+  <div class="v153-pagination">
+    <button id="v153PrevBtn" type="button" class="v153-secondary">← Önceki</button>
+    <span id="v153PageInfo" class="v153-page-info">Sayfa 1 / 1</span>
+    <button id="v153NextBtn" type="button" class="v153-secondary">Sonraki →</button>
+  </div>
+</section>
+
+<div id="v153PhotoModal" class="v153-modal" hidden role="dialog" aria-modal="true" aria-labelledby="v153PhotoTitle">
+  <div class="v153-modal-card">
+    <div class="v153-modal-head">
+      <strong id="v153PhotoTitle">Beton Fişi</strong>
+      <button id="v153PhotoClose" type="button" class="v153-secondary" aria-label="Fotoğrafı kapat">✕</button>
+    </div>
+    <div id="v153PhotoStatus" class="muted">Fotoğraf yükleniyor...</div>
+    <img id="v153PhotoImage" alt="Beton fişi fotoğrafı" hidden>
+  </div>
+</div>
 
 
 <!-- ORYVEX_CARI_LINK_V11 -->
@@ -2942,186 +3158,3 @@ else
 
 </body>
 </html>
-
-<!-- ORYVEX_BETON_V101A_REPORT_PANEL -->
-<section class="card beton-report-panel" id="betonReportPanel">
-
-  <div class="beton-report-head">
-    <div>
-      <h2>Beton Fiş Arama / Sınıflandırma</h2>
-      <p>
-        Beton fişlerini ara, filtrele, sınıflara ayır ve cari
-        durumlarını takip et.
-      </p>
-    </div>
-
-    <div class="beton-report-count" id="reportCount">
-      0 fiş
-    </div>
-  </div>
-
-  <div class="beton-filter-grid">
-
-    <label>
-      Başlangıç Tarihi
-      <input
-        id="filterDateFrom"
-        type="date">
-    </label>
-
-    <label>
-      Bitiş Tarihi
-      <input
-        id="filterDateTo"
-        type="date">
-    </label>
-
-    <label>
-      Fiş No
-      <input
-        id="filterSlipNo"
-        type="search"
-        placeholder="Örn. 0014121">
-    </label>
-
-    <label>
-      Tedarikçi
-      <input
-        id="filterSupplier"
-        type="search"
-        placeholder="Tedarikçi ara">
-    </label>
-
-    <label>
-      Beton Sınıfı
-      <input
-        id="filterConcreteClass"
-        type="search"
-        placeholder="C20/25">
-    </label>
-
-    <label>
-      Sınıflandırma
-      <select id="filterScope">
-        <option value="">Tümü</option>
-        <option value="PROJECT">Proje Betonu</option>
-        <option value="NON_PROJECT">Proje Dışı / Şantiye Gideri</option>
-        <option value="UNCLASSIFIED">Sınıflandırılmamış</option>
-      </select>
-    </label>
-
-    <label>
-      İş Grubu
-      <input
-        id="filterWorkGroup"
-        type="search"
-        placeholder="İş grubu">
-    </label>
-
-    <label>
-      Masraf Merkezi
-      <input
-        id="filterCostCenter"
-        type="search"
-        placeholder="Masraf merkezi">
-    </label>
-
-    <label>
-      Cari Durumu
-      <select id="filterCariStatus">
-        <option value="">Tümü</option>
-        <option value="READY">Aktarıma Hazır</option>
-        <option value="BLOCKED">Sınıflandırma Bekliyor</option>
-        <option value="TRANSFERRED">Aktarıldı</option>
-      </select>
-    </label>
-
-  </div>
-
-  <div class="beton-report-actions">
-
-    <button
-      id="filterResetBtn"
-      type="button"
-      class="beton-secondary-btn">
-      Filtreleri Temizle
-    </button>
-
-    <button
-      id="selectVisibleBtn"
-      type="button"
-      class="beton-secondary-btn">
-      Görünenleri Seç
-    </button>
-
-    <button
-      id="printBetonBtn"
-      type="button"
-      class="beton-secondary-btn">
-      Yazdır / PDF
-    </button>
-
-    <button
-      id="csvBetonBtn"
-      type="button"
-      class="beton-secondary-btn">
-      Excel / CSV
-    </button>
-
-    <button
-      id="cariTransferBtn"
-      type="button"
-      class="beton-cari-btn"
-      disabled>
-      Cariye Aktar
-    </button>
-
-  </div>
-
-  <div class="beton-selection-summary" id="reportSelectionSummary">
-    Seçili: 0 fiş · 0 m³
-  </div>
-
-  <div class="beton-cari-note" id="cariIntegrationNote">
-    Cari entegrasyonu hazırlanıyor. Sınıflandırılmamış fişler
-    cariye aktarılamaz.
-  </div>
-
-  <div class="beton-report-table-wrap">
-    <table class="beton-report-table" id="betonReportTable">
-      <thead>
-        <tr>
-          <th class="no-print">
-            <input
-              id="reportSelectAll"
-              type="checkbox"
-              aria-label="Tüm görünen fişleri seç">
-          </th>
-          <th>Fiş</th>
-          <th>Tarih</th>
-          <th>Miktar</th>
-          <th>Beton</th>
-          <th>Tedarikçi</th>
-          <th>Araç / Şoför</th>
-          <th>Fişteki Yer</th>
-          <th>Gerçek Şantiye</th>
-          <th>Sınıflandırma</th>
-          <th>İş Grubu</th>
-          <th>İmalat / Kullanım Yeri</th>
-          <th>Masraf Merkezi</th>
-          <th>Cari</th>
-        </tr>
-      </thead>
-
-      <tbody id="betonReportBody">
-        <tr>
-          <td colspan="14" class="empty">
-            Beton fişleri yükleniyor...
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-</section>
-
