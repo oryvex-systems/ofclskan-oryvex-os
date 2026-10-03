@@ -76,6 +76,19 @@ Sen kontrol edip sınıflandırmadan kesin kayıt oluşmaz.
 <div id="list"></div>
 </main>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script type="module">
+import "./adapters/t3-runtime-bootstrap.js";
+
+try {
+  await window.ORYVEX_T3_BOOTSTRAP.bootstrap();
+} catch (error) {
+  window.ORYVEX_T3_BOOTSTRAP_ERROR =
+    error?.message || String(error);
+}
+</script>
+
 <script type="module">
 import {
   listServerInbox,
