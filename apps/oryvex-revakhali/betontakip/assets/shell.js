@@ -6,6 +6,7 @@
       ["dashboard", "index.html", "Dashboard"],
       ["beton", "beton.html", "Beton Fişleri"],
   ["fis", "fis-merkezi.html", "Fiş Merkezi"],
+    ["inbox", "bekleyen-fisler.html", "Bekleyen Fişler"],
   ["cari", "cari-entegrasyonu.html", "Cari Entegrasyonu"],
       ["reports", "raporlar.html", "Raporlar"],
       ["settings", "ayarlar.html", "Ayarlar"],

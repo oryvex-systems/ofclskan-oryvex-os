@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta
+  name="viewport"
+  content="width=device-width,initial-scale=1"
+>
+<title>Bekleyen Fişler · ORYVEX Beton</title>
+<link rel="stylesheet" href="./assets/app.css">
+<style>
+main{max-width:1180px;margin:auto;padding:24px}
+.card{
+  border:1px solid #d8dee8;
+  border-radius:16px;
+  padding:18px;
+  margin:14px 0;
+  background:#fff
+}
+.grid{
+  display:grid;
+  grid-template-columns:
+    repeat(auto-fit,minmax(190px,1fr));
+  gap:12px
+}
+label{
+  display:block;
+  font-size:13px;
+  font-weight:700;
+  margin-bottom:5px
+}
+input,select{
+  width:100%;
+  padding:10px;
+  border:1px solid #cbd3df;
+  border-radius:9px
+}
+.actions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:15px
+}
+button{
+  padding:10px 16px;
+  border-radius:10px;
+  cursor:pointer
+}
+.status{
+  font-weight:800
+}
+.warn{
+  background:#fff7df
+}
+.ok{
+  background:#eefbf2
+}
+.small{
+  font-size:13px;
+  opacity:.75
+}
+</style>
+</head>
+
+<body>
+<main>
+<h1>Bekleyen Fişler</h1>
+
+<p>
+ChatGPT/terminal üzerinden hazırlanan fişler
+buraya <strong>PENDING_REVIEW</strong> olarak gelir.
+Sen kontrol edip sınıflandırmadan kesin kayıt oluşmaz.
+</p>
+
+<div id="summary" class="card"></div>
+<div id="list"></div>
+</main>
+
+<script type="module">
+import {
+  listServerInbox,
+  reviewServerInbox,
+  saveApprovedServerInbox
+} from "./adapters/receipt-inbox-supabase.js";
+
+const PROJECT_ID =
+  "62e1d67f-c1c5-47e1-9aec-e2d79e6c08cf";
+
+const list =
+  document.getElementById("list");
+
+const summary =
+  document.getElementById("summary");
+
+const esc = (value) =>
+  String(value ?? "")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;");
+
+function friendlyStatus(status) {
+  return {
+    PENDING_REVIEW: "Kontrol Bekliyor",
+    READY_FOR_SAVE: "Onaylandı · Kayıt Bekliyor",
+    SAVED: "Beton Kaydına İşlendi",
+    REJECTED: "Reddedildi"
+  }[status] || status;
+}
+
+async function render() {
+  summary.innerHTML =
+    "Sunucu kuyruğu yükleniyor...";
+
+  list.innerHTML = "";
+
+  try {
+    const rows =
+      await listServerInbox(PROJECT_ID);
+
+    const pending =
+      rows.filter(
+        r => r.status === "PENDING_REVIEW"
+      ).length;
+
+    const ready =
+      rows.filter(
+        r => r.status === "READY_FOR_SAVE"
+      ).length;
+
+    const saved =
+      rows.filter(
+        r => r.status === "SAVED"
+      ).length;
+
+    summary.innerHTML =
+      `<strong>${rows.length}</strong> fiş · ` +
+      `<strong>${pending}</strong> kontrol bekliyor · ` +
+      `<strong>${ready}</strong> kesin kayıt bekliyor · ` +
+      `<strong>${saved}</strong> işlendi`;
+
+    if (!rows.length) {
+      list.innerHTML =
+        `<div class="card">
+          Bekleyen fiş bulunmuyor.
+        </div>`;
+      return;
+    }
+
+    list.innerHTML =
+      rows.map(row => `
+        <section
+          class="card ${
+            row.status === "SAVED" ||
+            row.status === "READY_FOR_SAVE"
+              ? "ok"
+              : "warn"
+          }"
+          data-id="${esc(row.id)}"
+        >
+          <h2>
+            Fiş ${esc(row.slip_no)}
+          </h2>
+
+          <p class="status">
+            ${esc(friendlyStatus(row.status))}
+          </p>
+
+          <div class="grid">
+            <div>
+              <label>Tarih</label>
+              <input
+                value="${esc(row.slip_date)}"
+                disabled
+              >
+            </div>
+
+            <div>
+              <label>Beton Sınıfı</label>
+              <input
+                value="${esc(row.concrete_class)}"
+                disabled
+              >
+            </div>
+
+            <div>
+              <label>Miktar</label>
+              <input
+                value="${esc(row.quantity_m3)} m³"
+                disabled
+              >
+            </div>
+
+            <div>
+              <label>Tedarikçi</label>
+              <input
+                value="${esc(row.supplier_name)}"
+                disabled
+              >
+            </div>
+
+            <div>
+              <label>Araç</label>
+              <input
+                value="${esc(row.vehicle_plate)}"
+                disabled
+              >
+            </div>
+
+            <div>
+              <label>Şoför</label>
+              <input
+                value="${esc(row.driver_name)}"
+                disabled
+              >
+            </div>
+
+            <div>
+              <label>Basılı Şantiye</label>
+              <input
+                value="${esc(row.printed_site_name)}"
+                disabled
+              >
+            </div>
+
+            <div>
+              <label>Gerçek Şantiye</label>
+              <input
+                value="${esc(row.actual_site_name)}"
+                disabled
+              >
+            </div>
+          </div>
+
+          ${
+            row.status === "PENDING_REVIEW"
+            ? `
+              <hr>
+
+              <div class="grid">
+                <div>
+                  <label>Sınıflandırma</label>
+                  <select class="classification">
+                    <option value="">Seç</option>
+                    <option value="PROJECT">
+                      Proje
+                    </option>
+                    <option value="NON_PROJECT">
+                      Proje Dışı
+                    </option>
+                  </select>
+                </div>
+
+                <div>
+                  <label>İmalat / Kısım</label>
+                  <select class="workItem">
+                    <option value="">Seç</option>
+                    <option>Zemin</option>
+                    <option>Grobeton</option>
+                    <option>Temel</option>
+                    <option>Perde</option>
+                    <option>Kolon</option>
+                    <option>Kiriş</option>
+                    <option>Döşeme</option>
+                    <option>Merdiven</option>
+                    <option>Kubbe</option>
+                    <option>Minare</option>
+                    <option>Çevre İşleri</option>
+                    <option>Mobilizasyon</option>
+                    <option>Kule Vinç</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label>İş Grubu</label>
+                  <input
+                    class="workGroup"
+                    placeholder="Opsiyonel"
+                  >
+                </div>
+
+                <div>
+                  <label>Maliyet Merkezi</label>
+                  <input
+                    class="costCenter"
+                    placeholder="Opsiyonel"
+                  >
+                </div>
+              </div>
+
+              <div class="actions">
+                <button
+                  class="review"
+                  type="button"
+                >
+                  Kontrol Ettim ve Onaylıyorum
+                </button>
+              </div>
+            `
+            : ""
+          }
+
+          ${
+            row.status === "READY_FOR_SAVE"
+            ? `
+              <p>
+                Sınıflandırma:
+                <strong>
+                  ${esc(row.scope_type)}
+                </strong>
+                · ${esc(row.work_item)}
+              </p>
+
+              <div class="actions">
+                <button
+                  class="finalSave"
+                  type="button"
+                >
+                  Kesin Beton Kaydına İşle
+                </button>
+              </div>
+
+              <p class="small">
+                Bu buton beton fişini kesin kayda işler.
+                Cari aktarımı yapmaz.
+              </p>
+            `
+            : ""
+          }
+
+          ${
+            row.status === "SAVED"
+            ? `
+              <p class="small">
+                Beton kaydı oluşturuldu.
+                Cari aktarımı yapılmadı.
+              </p>
+            `
+            : ""
+          }
+        </section>
+      `).join("");
+
+    document
+      .querySelectorAll(".review")
+      .forEach(button => {
+        button.addEventListener(
+          "click",
+          async () => {
+            const card =
+              button.closest("[data-id]");
+
+            const classification =
+              card.querySelector(
+                ".classification"
+              ).value;
+
+            const workItem =
+              card.querySelector(
+                ".workItem"
+              ).value;
+
+            const workGroup =
+              card.querySelector(
+                ".workGroup"
+              ).value;
+
+            const costCenter =
+              card.querySelector(
+                ".costCenter"
+              ).value;
+
+            if (!classification || !workItem) {
+              alert(
+                "Sınıflandırma ve İmalat/Kısım seç."
+              );
+              return;
+            }
+
+            if (!confirm(
+              "Fişi kontrol ettiğini onaylıyor musun?\n\n" +
+              "Henüz Cari aktarımı yapılmayacak."
+            )) return;
+
+            button.disabled = true;
+
+            try {
+              await reviewServerInbox(
+                card.dataset.id,
+                {
+                  classification,
+                  workItem,
+                  workGroup,
+                  costCenter,
+                  explicitApproval: true
+                }
+              );
+
+              await render();
+            } catch (error) {
+              button.disabled = false;
+              alert(
+                error?.message ||
+                String(error)
+              );
+            }
+          }
+        );
+      });
+
+    document
+      .querySelectorAll(".finalSave")
+      .forEach(button => {
+        button.addEventListener(
+          "click",
+          async () => {
+            const card =
+              button.closest("[data-id]");
+
+            if (!confirm(
+              "KESİN KAYIT ONAYI\n\n" +
+              "Bu fiş Beton Takip kayıtlarına işlenecek.\n" +
+              "Cari aktarımı YAPILMAYACAK.\n\n" +
+              "Devam edilsin mi?"
+            )) return;
+
+            button.disabled = true;
+
+            try {
+              await saveApprovedServerInbox(
+                card.dataset.id,
+                true
+              );
+
+              await render();
+            } catch (error) {
+              button.disabled = false;
+              alert(
+                error?.message ||
+                String(error)
+              );
+            }
+          }
+        );
+      });
+
+  } catch (error) {
+    summary.innerHTML =
+      "Bekleyen fişler alınamadı.";
+
+    list.innerHTML =
+      `<div class="card warn">
+        ${esc(error?.message || error)}
+      </div>`;
+  }
+}
+
+render();
+</script>
+</body>
+</html>
