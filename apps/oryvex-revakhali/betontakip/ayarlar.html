@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#07111f">
+<title>Ayarlar — ORYVEX Beton</title>
+<link rel="stylesheet" href="./assets/app.css">
+
+<style>
+.wrap{width:min(1100px,calc(100% - 28px));margin:28px auto}
+.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:14px}
+.card{grid-column:span 6;background:var(--panel,#0d1b2d);border:1px solid var(--line,#20344d);border-radius:18px;padding:18px}
+.full{grid-column:1/-1}
+label{display:block;margin:12px 0}
+input,select,button{width:100%;padding:11px;border-radius:9px;border:1px solid var(--line,#20344d)}
+.state{padding:12px;border-radius:10px;background:#07111f;white-space:pre-wrap}
+.audit{max-height:280px;overflow:auto}
+.muted{opacity:.65}
+@media(max-width:760px){.card{grid-column:1/-1}}
+</style>
+</head>
+
+<body>
+
+<main class="wrap">
+
+<header>
+<div class="muted">ORYVEX • BETON TAKİP V1.0 • M9</div>
+<h1>Ayarlar / Yetki / Audit</h1>
+<p>Güvenli proje ayarları, oturum durumu ve işlem kayıtları.</p>
+</header>
+
+<section class="grid">
+
+<article class="card">
+<h2>Oturum</h2>
+<div id="sessionState" class="state">Kontrol ediliyor...</div>
+</article>
+
+<article class="card">
+<h2>Finansal Güvenlik</h2>
+<div class="state">Automatic Cari: FALSE
+Manual Financial Approval: TRUE
+Guest Write: DENIED
+Production Secrets: FRONTEND'DE YOK</div>
+</article>
+
+<article class="card full">
+<h2>Proje Ayarları</h2>
+
+<label>
+Proje Kodu
+<input id="projectCode" value="TASPAZAR-CAMII">
+</label>
+
+<label>
+Planlanan Proje Betonu (m³)
+<input id="planned" type="number" min="1" value="4400">
+</label>
+
+<label>
+Rapor Sayfa Boyutu
+<input id="pageSize" type="number" min="10" max="500" value="50">
+</label>
+
+<label>
+Varsayılan Rapor Sıralaması
+<select id="sort">
+<option value="date-desc">Tarih — Yeni → Eski</option>
+<option value="date-asc">Tarih — Eski → Yeni</option>
+</select>
+</label>
+
+<button id="save" type="button">
+AYARLARI KAYDET — AUTH GEREKLİ
+</button>
+
+<div id="saveResult" class="state" style="margin-top:12px">
+Henüz işlem yapılmadı.
+</div>
+</article>
+
+<article class="card full">
+<h2>Audit</h2>
+<p class="muted">Append-only test audit görünümü.</p>
+<pre id="audit" class="state audit">[]</pre>
+</article>
+
+</section>
+</main>
+
+<script type="module">
+
+import {
+  AuthSessionAdapter
+} from "./adapters/auth-session.js";
+
+import {
+  createGuestAuthProvider
+} from "./adapters/auth-fixture.js";
+
+import {
+  createMemorySettingsStorage
+} from "./adapters/settings-storage-memory.js";
+
+import {
+  createAppendOnlyAuditAdapter
+} from "./adapters/audit-append-only.js";
+
+import {
+  updateSettings
+} from "./models/settings-service.js";
+
+const auth =
+  new AuthSessionAdapter(
+    createGuestAuthProvider()
+  );
+
+const storage =
+  createMemorySettingsStorage({
+    projectCode:
+      "TASPAZAR-CAMII",
+    plannedProjectConcreteM3:
+      4400,
+    currency:
+      "TRY",
+    quantityUnit:
+      "m3",
+    automaticCariTransfer:
+      false,
+    manualFinancialApproval:
+      true,
+    reportPageSize:
+      50,
+    defaultReportSort:
+      "date-desc"
+  });
+
+const audit =
+  createAppendOnlyAuditAdapter();
+
+const $ = id =>
+  document.getElementById(id);
+
+async function renderSession() {
+  const session =
+    await auth.session();
+
+  $("sessionState").textContent =
+    session.state === "AUTHENTICATED"
+      ? `AUTHENTICATED\n${session.user.email ?? session.user.id}`
+      : "GUEST\nYazma işlemleri kapalı";
+}
+
+function renderAudit() {
+  $("audit").textContent =
+    JSON.stringify(
+      audit.list(),
+      null,
+      2
+    );
+}
+
+$("save").addEventListener(
+  "click",
+  async () => {
+    try {
+      const session =
+        await auth.session();
+
+      const saved =
+        await updateSettings({
+          storage,
+          audit,
+          session,
+          nextSettings: {
+            projectCode:
+              $("projectCode").value,
+            plannedProjectConcreteM3:
+              Number($("planned").value),
+            currency:
+              "TRY",
+            quantityUnit:
+              "m3",
+            automaticCariTransfer:
+              false,
+            manualFinancialApproval:
+              true,
+            reportPageSize:
+              Number($("pageSize").value),
+            defaultReportSort:
+              $("sort").value
+          }
+        });
+
+      $("saveResult").textContent =
+        JSON.stringify(saved,null,2);
+
+    } catch (error) {
+      $("saveResult").textContent =
+        `YAZMA REDDEDİLDİ: ${error.message}`;
+    }
+
+    renderAudit();
+  }
+);
+
+await renderSession();
+renderAudit();
+
+</script>
+
+</body>
+</html>

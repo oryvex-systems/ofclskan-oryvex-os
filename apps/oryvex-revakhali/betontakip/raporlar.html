@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#07111f">
+<title>Rapor Merkezi — ORYVEX Beton</title>
+<link rel="stylesheet" href="./assets/app.css">
+
+<style>
+.report-shell{width:min(1500px,calc(100% - 28px));margin:28px auto}
+.report-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:12px}
+.panel{background:var(--panel,#0d1b2d);border:1px solid var(--line,#20344d);border-radius:18px;padding:16px}
+.filters{grid-column:1/-1}
+.summary-card{grid-column:span 3}
+.table-panel{grid-column:1/-1;overflow:auto}
+.filter-grid{display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));gap:10px}
+input,select,button{width:100%;padding:10px;border-radius:9px;border:1px solid var(--line,#20344d)}
+button{cursor:pointer}
+.actions{display:grid;grid-template-columns:repeat(5,minmax(120px,1fr));gap:8px;margin-top:12px}
+table{width:100%;border-collapse:collapse;min-width:1250px}
+th,td{padding:9px;border-bottom:1px solid var(--line,#20344d);text-align:left;white-space:nowrap}
+th{position:sticky;top:0;background:var(--panel,#0d1b2d)}
+.big{font-size:1.55rem;font-weight:700}
+.muted{opacity:.65}
+@media(max-width:1000px){
+.summary-card{grid-column:span 6}
+.filter-grid{grid-template-columns:repeat(2,1fr)}
+.actions{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:600px){
+.summary-card{grid-column:1/-1}
+.filter-grid,.actions{grid-template-columns:1fr}
+}
+</style>
+</head>
+
+<body>
+
+<main class="report-shell">
+
+<header>
+<div class="muted">ORYVEX • BETON TAKİP V1.0 • M8</div>
+<h1>Arama ve Rapor Merkezi</h1>
+<p>Fiş bazlı, read-only arama, raporlama ve dışa aktarma.</p>
+</header>
+
+<section class="report-grid">
+
+<article class="panel filters">
+
+<div class="filter-grid">
+
+<input id="dateFrom" type="date" aria-label="Başlangıç tarihi">
+<input id="dateTo" type="date" aria-label="Bitiş tarihi">
+<input id="slipNo" placeholder="Fiş No">
+<input id="supplier" placeholder="Tedarikçi">
+<input id="concreteClass" placeholder="Beton Sınıfı">
+
+<select id="classification">
+<option value="">Tüm Sınıflandırmalar</option>
+<option value="PROJECT">PROJECT</option>
+<option value="NON_PROJECT">NON_PROJECT</option>
+<option value="UNCLASSIFIED">UNCLASSIFIED</option>
+</select>
+
+<input id="workGroup" placeholder="İş Grubu">
+<input id="workItem" placeholder="İmalat">
+<input id="costCenter" placeholder="Maliyet Merkezi">
+
+<select id="cariStatus">
+<option value="">Tüm Cari Durumları</option>
+<option value="SINIFLANDIRMA_BEKLIYOR">Sınıflandırma Bekliyor</option>
+<option value="FIYAT_BEKLIYOR">Fiyat Bekliyor</option>
+<option value="CARIYE_HAZIR">Cariye Hazır</option>
+<option value="CARIYE_AKTARILDI">Cariye Aktarıldı</option>
+</select>
+
+</div>
+
+<div class="actions">
+<button id="search">ARA / FİLTRELE</button>
+<button id="clear">TEMİZLE</button>
+<button id="csv">CSV</button>
+<button id="excel">EXCEL</button>
+<button id="pdf">PDF / YAZDIR</button>
+</div>
+
+</article>
+
+<article class="panel summary-card">
+<div class="muted">Fiş Sayısı</div>
+<div class="big" id="slipCount">0</div>
+</article>
+
+<article class="panel summary-card">
+<div class="muted">Toplam Beton</div>
+<div class="big"><span id="totalQty">0</span> m³</div>
+</article>
+
+<article class="panel summary-card">
+<div class="muted">Proje Betonu</div>
+<div class="big"><span id="projectQty">0</span> m³</div>
+</article>
+
+<article class="panel summary-card">
+<div class="muted">Toplam Fiyatlı Tutar</div>
+<div class="big"><span id="pricedAmount">0</span> TL</div>
+</article>
+
+<article class="panel table-panel">
+
+<table>
+<thead>
+<tr>
+<th>Tarih</th>
+<th>Fiş No</th>
+<th>Tedarikçi</th>
+<th>Beton Sınıfı</th>
+<th>m³</th>
+<th>Sınıflandırma</th>
+<th>İş Grubu</th>
+<th>İmalat</th>
+<th>Maliyet Merkezi</th>
+<th>Birim Fiyat</th>
+<th>Tutar</th>
+<th>Cari Durumu</th>
+</tr>
+</thead>
+
+<tbody id="rows"></tbody>
+</table>
+
+<p id="status" class="muted"></p>
+
+</article>
+
+</section>
+</main>
+
+<script type="module">
+
+import {
+  filterReportRows,
+  summarizeReportRows,
+  sortReportRows
+} from "./models/report-model.js";
+
+import {
+  reportToCsv,
+  reportToExcelHtml,
+  reportToPrintableHtml,
+  escapeHtml
+} from "./models/report-export.js";
+
+import {
+  loadReportRows
+} from "./adapters/report-data.js";
+
+let sourceRows = [];
+let currentRows = [];
+
+const $ = id =>
+  document.getElementById(id);
+
+function filters() {
+  return {
+    dateFrom: $("dateFrom").value,
+    dateTo: $("dateTo").value,
+    slipNo: $("slipNo").value,
+    supplier: $("supplier").value,
+    concreteClass: $("concreteClass").value,
+    classification: $("classification").value,
+    workGroup: $("workGroup").value,
+    workItem: $("workItem").value,
+    costCenter: $("costCenter").value,
+    cariStatus: $("cariStatus").value
+  };
+}
+
+function render() {
+  currentRows =
+    sortReportRows(
+      filterReportRows(
+        sourceRows,
+        filters()
+      ),
+      "date",
+      "desc"
+    );
+
+  const summary =
+    summarizeReportRows(currentRows);
+
+  $("slipCount").textContent =
+    summary.slipCount;
+
+  $("totalQty").textContent =
+    summary.totalQuantityM3;
+
+  $("projectQty").textContent =
+    summary.projectQuantityM3;
+
+  $("pricedAmount").textContent =
+    summary.pricedAmount.toLocaleString(
+      "tr-TR"
+    );
+
+  $("rows").innerHTML =
+    currentRows.map(row => `
+<tr>
+<td>${escapeHtml(row.date)}</td>
+<td>${escapeHtml(row.slipNo)}</td>
+<td>${escapeHtml(row.supplierName)}</td>
+<td>${escapeHtml(row.concreteClass)}</td>
+<td>${escapeHtml(row.quantityM3)}</td>
+<td>${escapeHtml(row.classification)}</td>
+<td>${escapeHtml(row.workGroup)}</td>
+<td>${escapeHtml(row.workItem)}</td>
+<td>${escapeHtml(row.costCenter)}</td>
+<td>${escapeHtml(row.unitPrice ?? "")}</td>
+<td>${escapeHtml(row.amount ?? "")}</td>
+<td>${escapeHtml(row.cariStatus)}</td>
+</tr>`).join("");
+
+  $("status").textContent =
+    `${currentRows.length} kayıt gösteriliyor • READ ONLY`;
+}
+
+function download(
+  content,
+  filename,
+  type
+) {
+  const blob =
+    new Blob(
+      [content],
+      { type }
+    );
+
+  const url =
+    URL.createObjectURL(blob);
+
+  const a =
+    document.createElement("a");
+
+  a.href = url;
+  a.download = filename;
+  a.click();
+
+  setTimeout(
+    () => URL.revokeObjectURL(url),
+    1000
+  );
+}
+
+$("search").addEventListener(
+  "click",
+  render
+);
+
+$("clear").addEventListener(
+  "click",
+  () => {
+    document
+      .querySelectorAll(
+        ".filter-grid input,.filter-grid select"
+      )
+      .forEach(el => el.value = "");
+
+    render();
+  }
+);
+
+$("csv").addEventListener(
+  "click",
+  () => {
+    download(
+      reportToCsv(currentRows),
+      "beton-raporu.csv",
+      "text/csv;charset=utf-8"
+    );
+  }
+);
+
+$("excel").addEventListener(
+  "click",
+  () => {
+    download(
+      reportToExcelHtml(currentRows),
+      "beton-raporu.xls",
+      "application/vnd.ms-excel;charset=utf-8"
+    );
+  }
+);
+
+$("pdf").addEventListener(
+  "click",
+  () => {
+    const summary =
+      summarizeReportRows(currentRows);
+
+    const html =
+      reportToPrintableHtml(
+        currentRows,
+        summary
+      );
+
+    const win =
+      window.open(
+        "",
+        "_blank",
+        "noopener,noreferrer"
+      );
+
+    if (!win) {
+      alert(
+        "PDF/Yazdırma penceresi tarayıcı tarafından engellendi."
+      );
+      return;
+    }
+
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+
+    setTimeout(
+      () => win.print(),
+      250
+    );
+  }
+);
+
+try {
+  sourceRows =
+    await loadReportRows();
+
+  render();
+} catch (error) {
+  $("status").textContent =
+    `Rapor verisi yüklenemedi: ${error.message}`;
+}
+
+</script>
+
+</body>
+</html>

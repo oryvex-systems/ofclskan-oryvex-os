@@ -1,0 +1,58 @@
+{
+  "schemaVersion": "1.0",
+  "source": "M8 fixture only",
+  "readOnly": true,
+  "items": [
+    {
+      "date": "2026-10-01",
+      "slipNo": "M8-1001",
+      "supplierCode": "EKS_GOKTAS",
+      "supplierName": "EKS Göktaş Hazır Beton San. Tic. Ltd. Şti.",
+      "concreteClass": "C20/25",
+      "quantityM3": 8,
+      "classification": "PROJECT",
+      "workGroup": "Temel",
+      "workItem": "Temel",
+      "costCenter": "Kaba İnşaat",
+      "unitPrice": 2700,
+      "amount": 21600,
+      "currency": "TRY",
+      "cariStatus": "CARIYE_HAZIR",
+      "pourId": "M8-POUR-001"
+    },
+    {
+      "date": "2026-10-02",
+      "slipNo": "M8-1002",
+      "supplierCode": "EKS_GOKTAS",
+      "supplierName": "EKS Göktaş Hazır Beton San. Tic. Ltd. Şti.",
+      "concreteClass": "C16",
+      "quantityM3": 6,
+      "classification": "NON_PROJECT",
+      "workGroup": "Mobilizasyon",
+      "workItem": "Kule Vinç",
+      "costCenter": "Mobilizasyon",
+      "unitPrice": 2600,
+      "amount": 15600,
+      "currency": "TRY",
+      "cariStatus": "CARIYE_AKTARILDI",
+      "pourId": "M8-POUR-002"
+    },
+    {
+      "date": "2026-10-03",
+      "slipNo": "M8-1003",
+      "supplierCode": "EKS_GOKTAS",
+      "supplierName": "EKS Göktaş Hazır Beton San. Tic. Ltd. Şti.",
+      "concreteClass": "C30/35",
+      "quantityM3": 7,
+      "classification": "UNCLASSIFIED",
+      "workGroup": "",
+      "workItem": "",
+      "costCenter": "",
+      "unitPrice": null,
+      "amount": null,
+      "currency": "TRY",
+      "cariStatus": "SINIFLANDIRMA_BEKLIYOR",
+      "pourId": null
+    }
+  ]
+}

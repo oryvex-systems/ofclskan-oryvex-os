@@ -1,0 +1,83 @@
+{
+  "schemaVersion": "1.0",
+  "entities": {
+    "ConcreteSlip": {
+      "sourceOfTruthForQuantity": true,
+      "fields": {
+        "id": "uuid",
+        "companyId": "uuid",
+        "projectId": "uuid",
+        "supplierId": "uuid|null",
+        "slipNo": "string",
+        "slipDate": "date",
+        "productionStart": "time|null",
+        "productionEnd": "time|null",
+        "concreteClassRaw": "string|null",
+        "concreteClassNormalized": "string|null",
+        "quantityM3": "decimal",
+        "vehiclePlate": "string|null",
+        "driverName": "string|null",
+        "printedSite": "string|null",
+        "actualSite": "string|null",
+        "pourId": "uuid|null",
+        "classificationStatus": "enum",
+        "receiptFileReference": "string|null",
+        "aiExtractionStatus": "enum",
+        "createdAt": "timestamp",
+        "updatedAt": "timestamp"
+      }
+    },
+    "ConcretePour": {
+      "sourceOfTruthForQuantity": false,
+      "fields": {
+        "id": "uuid",
+        "companyId": "uuid",
+        "projectId": "uuid",
+        "pourDate": "date",
+        "scopeType": "PROJECT|NON_PROJECT",
+        "workGroup": "string",
+        "workItem": "string",
+        "costCenter": "string",
+        "notes": "string|null",
+        "createdAt": "timestamp",
+        "updatedAt": "timestamp"
+      },
+      "quantityRule": "SUM(linked ConcreteSlip.quantityM3)"
+    },
+    "ConcretePrice": {
+      "fields": {
+        "id": "uuid",
+        "companyId": "uuid",
+        "projectId": "uuid|null",
+        "supplierId": "uuid|null",
+        "normalizedClass": "string",
+        "unitPrice": "decimal",
+        "currency": "string",
+        "validFrom": "date",
+        "validTo": "date|null",
+        "active": "boolean"
+      }
+    },
+    "Supplier": {
+      "fields": {
+        "id": "uuid",
+        "companyId": "uuid",
+        "name": "string",
+        "taxId": "string|null",
+        "active": "boolean"
+      }
+    },
+    "ReceiptDocument": {
+      "fields": {
+        "id": "uuid",
+        "slipId": "uuid",
+        "storageProvider": "string",
+        "storagePath": "string",
+        "mimeType": "string",
+        "sizeBytes": "integer",
+        "uploadedBy": "uuid",
+        "createdAt": "timestamp"
+      }
+    }
+  }
+}

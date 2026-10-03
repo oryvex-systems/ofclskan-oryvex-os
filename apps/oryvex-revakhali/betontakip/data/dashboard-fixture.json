@@ -1,0 +1,66 @@
+{
+  "purpose": "M3 read-model regression fixture only",
+  "productionData": false,
+  "slips": [
+    {
+      "id": "fixture-0014121",
+      "slipNo": "0014121",
+      "slipDate": "2026-10-01",
+      "supplierName": "EKS Göktaş Hazır Beton San. Tic. Ltd. Şti.",
+      "concreteClassRaw": "C20/25 Katkısız",
+      "quantityM3": 8,
+      "scopeType": "UNCLASSIFIED",
+      "workItem": null,
+      "unitPrice": 2700,
+      "totalAmount": 21600,
+      "cariStatus": "SINIFLANDIRMA_BEKLIYOR",
+      "cariTransferred": false,
+      "readOnlyFixture": true
+    },
+    {
+      "id": "fixture-project-1",
+      "slipNo": "DEMO-P-001",
+      "slipDate": "2026-10-02",
+      "supplierName": "EKS Göktaş Hazır Beton San. Tic. Ltd. Şti.",
+      "concreteClassRaw": "C20/25",
+      "quantityM3": 10,
+      "scopeType": "PROJECT",
+      "workItem": "Zemin",
+      "unitPrice": 2700,
+      "totalAmount": 27000,
+      "cariStatus": "CARIYE_HAZIR",
+      "cariTransferred": false,
+      "readOnlyFixture": true
+    },
+    {
+      "id": "fixture-project-2",
+      "slipNo": "DEMO-P-002",
+      "slipDate": "2026-10-03",
+      "supplierName": "EKS Göktaş Hazır Beton San. Tic. Ltd. Şti.",
+      "concreteClassRaw": "C30/35",
+      "quantityM3": 12,
+      "scopeType": "PROJECT",
+      "workItem": "Temel",
+      "unitPrice": 2800,
+      "totalAmount": 33600,
+      "cariStatus": "CARIYE_AKTARILDI",
+      "cariTransferred": true,
+      "readOnlyFixture": true
+    },
+    {
+      "id": "fixture-nonproject-1",
+      "slipNo": "DEMO-NP-001",
+      "slipDate": "2026-10-03",
+      "supplierName": "EKS Göktaş Hazır Beton San. Tic. Ltd. Şti.",
+      "concreteClassRaw": "C16",
+      "quantityM3": 5,
+      "scopeType": "NON_PROJECT",
+      "workItem": "Mobilizasyon",
+      "unitPrice": 2600,
+      "totalAmount": 13000,
+      "cariStatus": "CARIYE_HAZIR",
+      "cariTransferred": false,
+      "readOnlyFixture": true
+    }
+  ]
+}
