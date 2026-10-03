@@ -286,6 +286,7 @@ async function authenticate(){
 
   companyId=member.company_id;
 
+  updateBetonReceiptVisionState();
   return true;
 }
 
@@ -803,6 +804,308 @@ async function unregisterBetonReceiptPhoto(photoId){
   }
 }
 
+
+/* ORYVEX_BETON_RECEIPT_V15_2_AI_VISION */
+
+let betonVisionReading=false;
+
+const BETON_VISION_FIELDS=[
+  ['slip_no','Fiş No'],
+  ['slip_date','Tarih'],
+  ['quantity_m3','Miktar'],
+  ['concrete_class','Beton Sınıfı'],
+  ['supplier_name','Tedarikçi'],
+  ['customer_name','Müşteri'],
+  ['vehicle_plate','Plaka'],
+  ['driver_name','Şoför'],
+  ['production_start','Üretim Başlangıç'],
+  ['production_finish','Üretim Bitiş'],
+  ['printed_site_name','Basılı Şantiye'],
+  ['other_text','Diğer Metin']
+];
+
+function betonVisionHasAuthenticatedSession(){
+  return !!(session?.user?.id && session?.access_token);
+}
+
+function betonVisionSelectedFile(){
+  return document.getElementById('betonReceiptPhoto')?.files?.[0] || null;
+}
+
+function updateBetonReceiptVisionState(){
+  const btn=document.getElementById('betonReceiptReadBtn');
+  if(!btn) return;
+  const file=betonVisionSelectedFile();
+  const valid=!!(
+    file &&
+    /^image\/(jpeg|png|webp)$/i.test(file.type || '') &&
+    Number(file.size || 0)>0 &&
+    Number(file.size || 0)<=10*1024*1024
+  );
+  btn.disabled=betonVisionReading || !valid || !betonVisionHasAuthenticatedSession();
+  btn.title=!betonVisionHasAuthenticatedSession()
+    ? 'Fişi okumak için yetkili canlı oturum gerekli.'
+    : !valid ? 'Önce JPEG, PNG veya WEBP fiş fotoğrafı seç.' : '';
+}
+
+function betonVisionSetStatus(message){
+  const el=document.getElementById('betonReceiptStatus');
+  if(el) el.textContent=message;
+}
+
+function betonVisionResetResult(){
+  const box=document.getElementById('betonReceiptVisionResult');
+  if(!box) return;
+  box.hidden=true;
+  box.textContent='';
+}
+
+function betonVisionFileToDataUrl(file){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=()=>resolve(String(reader.result || ''));
+    reader.onerror=()=>reject(new Error('Fiş fotoğrafı okunamadı.'));
+    reader.readAsDataURL(file);
+  });
+}
+
+function betonVisionFieldValue(result,key){
+  const field=result?.fields?.[key];
+  if(!field || field.value===null || field.value===undefined) return null;
+  const value=String(field.value).trim();
+  return value || null;
+}
+
+function betonVisionSetFormValue(form,name,value){
+  if(value===null || value===undefined || value==='') return;
+  const input=form?.querySelector('[name="'+name+'"]');
+  if(!input) return;
+  const text=String(value).trim();
+  if(!text) return;
+
+  if(input.tagName==='SELECT'){
+    const exists=Array.from(input.options || []).some(o=>String(o.value)===text);
+    if(!exists){
+      const option=document.createElement('option');
+      option.value=text;
+      option.textContent=text;
+      option.dataset.aiVision='1';
+      input.appendChild(option);
+    }
+  }
+
+  input.value=text;
+  input.dispatchEvent(new Event('input',{bubbles:true}));
+  input.dispatchEvent(new Event('change',{bubbles:true}));
+}
+
+function betonVisionAppendNotes(form,result){
+  const note=form?.querySelector('[name="raw_note"]');
+  if(!note) return;
+  const customer=betonVisionFieldValue(result,'customer_name');
+  const other=betonVisionFieldValue(result,'other_text');
+  const additions=[];
+  if(customer) additions.push('Müşteri / Alt Yüklenici: '+customer);
+  if(other) additions.push('Fişten okunan diğer bilgi: '+other);
+  if(!additions.length) return;
+
+  const current=String(note.value || '').trim();
+  const missing=additions.filter(line=>!current.includes(line));
+  if(!missing.length) return;
+
+  note.value=(current ? current+'\n' : '')+missing.join('\n');
+  note.dispatchEvent(new Event('input',{bubbles:true}));
+}
+
+function betonVisionApplyResult(result){
+  const form=document.getElementById('slipForm');
+  if(!form) return;
+
+  [
+    'slip_no','slip_date','quantity_m3','concrete_class',
+    'supplier_name','vehicle_plate','driver_name',
+    'production_start','production_finish','printed_site_name'
+  ].forEach(key=>{
+    betonVisionSetFormValue(form,key,betonVisionFieldValue(result,key));
+  });
+
+  betonVisionAppendNotes(form,result);
+}
+
+function betonVisionEscape(value){
+  return String(value ?? '').replace(/[&<>"']/g,c=>({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+
+function betonVisionRenderResult(result,duplicate){
+  const box=document.getElementById('betonReceiptVisionResult');
+  if(!box) return;
+
+  const rows=BETON_VISION_FIELDS.map(([key,label])=>{
+    const field=result?.fields?.[key] || {};
+    const hasValue=field.value!==null &&
+      field.value!==undefined &&
+      String(field.value).trim()!=='';
+    const confidence=Number(field.confidence);
+    const hasConfidence=Number.isFinite(confidence);
+    let state='';
+    let info='Okunamadı';
+
+    if(hasValue){
+      if(hasConfidence){
+        const pct=Math.round(Math.max(0,Math.min(1,confidence))*100);
+        info='%'+pct;
+        if(confidence<0.80){
+          state='needs-check';
+          info+=' · Kontrol gerekli';
+        }
+      }else{
+        state='needs-check';
+        info='Kontrol gerekli';
+      }
+    }else{
+      state='unreadable';
+    }
+
+    return '<div class="v15-confidence-row '+state+'">'+
+      '<span>'+betonVisionEscape(label)+'</span>'+
+      '<small>'+betonVisionEscape(info)+'</small>'+
+      '</div>';
+  }).join('');
+
+  const warnings=[
+    ...(Array.isArray(result?.warnings) ? result.warnings : []),
+    ...(duplicate ? ['Bu fiş numarası sistemde mevcut olabilir.'] : [])
+  ];
+
+  box.innerHTML=
+    '<div class="v15-vision-title">✓ Fiş okundu</div>'+
+    '<div class="v15-confidence-grid">'+rows+'</div>'+
+    warnings.map(w=>
+      '<div class="v15-vision-warning">⚠ '+betonVisionEscape(w)+'</div>'
+    ).join('');
+
+  box.hidden=false;
+}
+
+async function betonVisionDuplicateExists(slipNo){
+  if(!slipNo || !projectId || !betonVisionHasAuthenticatedSession()) return false;
+
+  const {data,error}=await sb
+    .from('santiye_concrete_slips')
+    .select('id')
+    .eq('project_id',projectId)
+    .eq('slip_no',String(slipNo).trim())
+    .limit(1);
+
+  if(error){
+    console.warn('Beton fişi duplicate kontrolü yapılamadı:',error.message);
+    return false;
+  }
+
+  return Array.isArray(data) && data.length>0;
+}
+
+function betonVisionFriendlyError(error){
+  const status=Number(error?.context?.status || error?.status || 0);
+  if(status===401) return 'Oturum doğrulanamadı. Yeniden giriş yapıp tekrar dene.';
+  if(status===403) return 'Bu projede AI fiş okuma yetkin bulunmuyor.';
+  if(status===413) return 'Fiş fotoğrafı 10 MB sınırını aşıyor.';
+  if(status===429) return 'AI servisi şu an yoğun. Biraz sonra tekrar dene.';
+
+  const message=String(error?.message || '');
+  if(/timeout|aborted|zaman/i.test(message)){
+    return 'Fiş okuma zaman aşımına uğradı. Tekrar deneyebilirsin.';
+  }
+  return 'Fiş okunamadı. Fotoğrafı kontrol edip tekrar dene.';
+}
+
+async function readBetonReceiptVision(){
+  if(betonVisionReading) return;
+  const file=betonVisionSelectedFile();
+
+  if(!betonVisionHasAuthenticatedSession()){
+    betonVisionSetStatus('Fişi okumak için yetkili canlı oturum gerekli.');
+    updateBetonReceiptVisionState();
+    return;
+  }
+  if(!file){
+    betonVisionSetStatus('Önce fiş fotoğrafı seç.');
+    updateBetonReceiptVisionState();
+    return;
+  }
+  if(!/^image\/(jpeg|png|webp)$/i.test(file.type || '')){
+    betonVisionSetStatus('JPEG, PNG veya WEBP fotoğraf seç.');
+    return;
+  }
+  if(Number(file.size || 0)>10*1024*1024){
+    betonVisionSetStatus('Fiş fotoğrafı en fazla 10 MB olabilir.');
+    return;
+  }
+
+  betonVisionReading=true;
+  updateBetonReceiptVisionState();
+  betonVisionResetResult();
+  betonVisionSetStatus('Fiş okunuyor...');
+
+  try{
+    const dataUrl=await betonVisionFileToDataUrl(file);
+    const {data,error}=await sb.functions.invoke(
+      'santiye-beton-receipt-vision',
+      {
+        body:{
+          project_id:projectId,
+          image:{mime_type:file.type,data_url:dataUrl}
+        }
+      }
+    );
+
+    if(error) throw error;
+    if(!data?.ok || !data?.fields){
+      throw new Error('AI fiş okuma geçerli sonuç döndürmedi.');
+    }
+
+    betonVisionApplyResult(data);
+    const slipNo=betonVisionFieldValue(data,'slip_no');
+    const duplicate=slipNo ? await betonVisionDuplicateExists(slipNo) : false;
+    betonVisionRenderResult(data,duplicate);
+
+    betonVisionSetStatus(
+      duplicate
+        ? 'Fiş okundu · Bu fiş numarası sistemde mevcut olabilir. Alanları kontrol et.'
+        : 'Fiş okundu · Alanları kontrol edip sonra kaydet.'
+    );
+  }catch(error){
+    console.error('Beton AI Vision hatası:',error?.message || 'İstek başarısız');
+    betonVisionSetStatus(betonVisionFriendlyError(error));
+  }finally{
+    betonVisionReading=false;
+    updateBetonReceiptVisionState();
+  }
+}
+
+function bindBetonReceiptVision(){
+  const input=document.getElementById('betonReceiptPhoto');
+  const btn=document.getElementById('betonReceiptReadBtn');
+
+  if(input && input.dataset.v152VisionBound!=='1'){
+    input.dataset.v152VisionBound='1';
+    input.addEventListener('change',()=>{
+      betonVisionResetResult();
+      updateBetonReceiptVisionState();
+    });
+  }
+
+  if(btn && btn.dataset.v152VisionBound!=='1'){
+    btn.dataset.v152VisionBound='1';
+    btn.addEventListener('click',readBetonReceiptVision);
+  }
+
+  updateBetonReceiptVisionState();
+}
+
+
 async function saveSlip(e){
   e.preventDefault();
 
@@ -936,6 +1239,9 @@ async function saveSlip(e){
     if(receiptStatus){
       receiptStatus.textContent='Fotoğraf bekleniyor.';
     }
+
+    betonVisionResetResult();
+    updateBetonReceiptVisionState();
 
     $('slipDate').value=
       new Date().toISOString().slice(0,10);
@@ -2167,6 +2473,7 @@ async function boot(){
   },0);
 
   resetConcreteClassificationDefaults();
+  bindBetonReceiptVision();
   try{
     const demo=isLocalDemo();
 

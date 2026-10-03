@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="tr">
 <head>
-<!-- ORYVEX_BETON_V15 -->
+<!-- ORYVEX_BETON_V15_2 -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Beton Takip · ORYVEX ŞANTİYE OS</title>
@@ -953,6 +953,18 @@ td small{
 #betonReceiptPhoto{
   width:100%;
 }
+.v15-vision-actions{display:grid;grid-template-columns:minmax(180px,260px) 1fr;gap:10px;align-items:center;margin-top:12px}
+.v15-vision-btn{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#07111f}
+.v15-vision-result{margin-top:12px;padding:12px;border:1px solid #24445f;border-radius:12px;background:#091827}
+.v15-vision-result[hidden]{display:none}
+.v15-vision-title{font-weight:1000;margin-bottom:8px}
+.v15-confidence-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px 12px}
+.v15-confidence-row{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid rgba(143,161,184,.14);font-size:12px}
+.v15-confidence-row small{color:var(--muted)}
+.v15-confidence-row.needs-check small{color:#fbbf24;font-weight:900}
+.v15-confidence-row.unreadable small{color:#fb7185;font-weight:900}
+.v15-vision-warning{margin-top:8px;color:#fbbf24;font-size:12px;font-weight:800}
+@media(max-width:650px){.v15-vision-actions,.v15-confidence-grid{grid-template-columns:1fr}}
 </style>
 
 </head>
@@ -1155,6 +1167,11 @@ td small{
   <div id="betonReceiptStatus" class="muted" style="margin-top:8px">
     Fotoğraf bekleniyor.
   </div>
+  <div class="v15-vision-actions">
+    <button id="betonReceiptReadBtn" class="v15-vision-btn" type="button" disabled>✨ Fişi Oku</button>
+    <div class="muted">AI yalnızca fişte görünen alanları forma aktarır. Sınıflandırma, fiyat ve Cari işlemi yapmaz.</div>
+  </div>
+  <div id="betonReceiptVisionResult" class="v15-vision-result" hidden aria-live="polite"></div>
 </div>
 
         <div>
@@ -2887,6 +2904,13 @@ else
         input.value='';
         if(wrap) wrap.style.display='none';
         if(status) status.textContent='JPEG, PNG veya WEBP fotoğraf seç.';
+        return;
+      }
+
+      if(Number(file.size || 0) > 10 * 1024 * 1024){
+        input.value='';
+        if(wrap) wrap.style.display='none';
+        if(status) status.textContent='Fiş fotoğrafı en fazla 10 MB olabilir.';
         return;
       }
 
