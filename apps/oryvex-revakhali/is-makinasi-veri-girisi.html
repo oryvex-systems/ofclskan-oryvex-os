@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>İş Makinası Veri Girişi | Taşpazar Camii</title>
+<style>
+:root{
+  --bg:#f4f6f8;
+  --card:#fff;
+  --text:#18212b;
+  --muted:#687481;
+  --line:#dfe4e8;
+  --dark:#111827;
+  --accent:#d8a900;
+  --ok:#177245;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+}
+header{
+  background:var(--dark);
+  color:white;
+  padding:18px 20px;
+  border-bottom:4px solid var(--accent);
+}
+.header-inner{
+  max-width:900px;
+  margin:auto;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:20px;
+}
+.brand{font-weight:800;font-size:19px}
+.brand small{
+  display:block;
+  color:#c8cdd4;
+  font-size:12px;
+  margin-top:4px;
+  font-weight:500;
+}
+nav a{
+  color:white;
+  text-decoration:none;
+  font-size:13px;
+  margin-left:14px;
+}
+main{
+  max-width:900px;
+  margin:24px auto;
+  padding:0 16px 50px;
+}
+.card{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:22px;
+  box-shadow:0 4px 18px rgba(0,0,0,.04);
+}
+h1{margin:0 0 5px;font-size:24px}
+.desc{margin:0 0 24px;color:var(--muted);font-size:14px}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:16px;
+}
+.full{grid-column:1/-1}
+label{
+  display:block;
+  font-size:12px;
+  font-weight:700;
+  margin-bottom:6px;
+}
+input,select,textarea{
+  width:100%;
+  border:1px solid #ccd3d9;
+  border-radius:9px;
+  background:white;
+  padding:12px;
+  font:inherit;
+  color:var(--text);
+}
+input:focus,select:focus,textarea:focus{
+  outline:2px solid rgba(216,169,0,.25);
+  border-color:var(--accent);
+}
+textarea{min-height:85px;resize:vertical}
+.summary{
+  margin-top:20px;
+  padding:16px;
+  background:#f8f9fa;
+  border:1px solid var(--line);
+  border-radius:10px;
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+}
+.summary strong{display:block;font-size:18px;margin-top:3px}
+.summary span{font-size:11px;color:var(--muted)}
+.actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:10px;
+  margin-top:20px;
+}
+button{
+  border:0;
+  border-radius:9px;
+  padding:12px 18px;
+  font-weight:800;
+  cursor:pointer;
+}
+.secondary{background:#e9edf0;color:#26323d}
+.primary{background:var(--dark);color:white}
+.notice{
+  display:none;
+  margin-top:15px;
+  border-radius:9px;
+  padding:12px;
+  background:#eaf7ef;
+  color:var(--ok);
+  font-size:13px;
+  font-weight:700;
+}
+@media(max-width:650px){
+  .grid{grid-template-columns:1fr}
+  .full{grid-column:auto}
+  .summary{grid-template-columns:1fr}
+  .header-inner{display:block}
+  nav{margin-top:12px}
+  nav a{margin:0 12px 0 0}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="brand">
+      TAŞPAZAR CAMİİ
+      <small>İş Makinası Çalışma Takip Sistemi</small>
+    </div>
+    <nav>
+      <a href="/is-makinasi.html">Takip Ekranı</a>
+      <a href="/is-makinasi-veri-girisi.html">Veri Girişi</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="card">
+    <h1>İş Makinası Veri Girişi</h1>
+    <p class="desc">Fiş bilgilerini girin. Yeni kayıt varsayılan olarak ONAY BEKLİYOR durumunda oluşturulur.</p>
+
+    <form id="machineForm">
+      <div class="grid">
+
+        <div>
+          <label>Fiş No</label>
+          <input id="slip_no" required placeholder="000108">
+        </div>
+
+        <div>
+          <label>Tarih</label>
+          <input id="work_date" type="date" required>
+        </div>
+
+        <div>
+          <label>Makina</label>
+          <select id="machine_id" required>
+            <option value="">Seçiniz</option>
+            <option value="jcb">JCB — Bekoloder</option>
+            <option value="loader">Loder — Lastikli Yükleyici</option>
+            <option value="excavator">Ekskavatör — Paletli Ekskavatör</option>
+            <option value="truck">Kamyon — Hafriyat / Nakliye</option>
+          </select>
+        </div>
+
+        <div>
+          <label>Plaka</label>
+          <input id="plate" placeholder="68 BGF 545">
+        </div>
+
+        <div>
+          <label>Başlangıç Saati</label>
+          <input id="start_time" type="time" required>
+        </div>
+
+        <div>
+          <label>Bitiş Saati</label>
+          <input id="end_time" type="time" required>
+        </div>
+
+        <div>
+          <label>Yapılan İş</label>
+          <select id="work_item_id" required>
+            <option value="">Seçiniz</option>
+            <option value="zemin-duzeltme">Zemin Düzeltme</option>
+            <option value="dolgu">Dolgu</option>
+            <option value="toprak-depolama">Toprak Depolama</option>
+            <option value="micir-serimi">Mıcır Serimi</option>
+            <option value="hafriyat-kazisi">Hafriyat Kazısı</option>
+            <option value="yukleme">Yükleme</option>
+            <option value="nakliye">Nakliye</option>
+            <option value="diger">Diğer</option>
+          </select>
+        </div>
+
+        <div>
+          <label>Operatör / Şoför</label>
+          <input id="driver" placeholder="Ad Soyad">
+        </div>
+
+        <div>
+          <label>Firma Yetkilisi</label>
+          <input id="customer_representative" placeholder="Ad Soyad">
+        </div>
+
+        <div>
+          <label>Tedarikçi</label>
+          <input id="supplier_name"
+                 value="MEVLANA ÜŞENMEZ HAFRİYAT & İNŞAAT & YIKIM">
+        </div>
+
+        <div class="full">
+          <label>Açıklama</label>
+          <textarea id="description" placeholder="Yapılan iş ile ilgili not..."></textarea>
+        </div>
+
+      </div>
+
+      <div class="summary">
+        <div>
+          <span>ÇALIŞMA SÜRESİ</span>
+          <strong id="durationText">0 Saat 00 Dakika</strong>
+        </div>
+        <div>
+          <span>DURUM</span>
+          <strong>ONAY BEKLİYOR</strong>
+        </div>
+        <div>
+          <span>TUTAR</span>
+          <strong>Onay sonrası</strong>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="reset" class="secondary">Temizle</button>
+        <button type="submit" class="primary">Fişi Kaydet</button>
+      </div>
+
+      <div id="notice" class="notice"></div>
+    </form>
+  </div>
+</main>
+
+<script>
+const PROJECT_ID="62e1d67f-c1c5-47e1-9aec-e2d79e6c08cf";
+
+const machines={
+  jcb:"JCB - Bekoloder",
+  loader:"Loder - Lastikli Yükleyici",
+  excavator:"Ekskavatör - Paletli Ekskavatör",
+  truck:"Kamyon - Hafriyat/Nakliye"
+};
+
+const workItems={
+  "zemin-duzeltme":"Zemin Düzeltme",
+  "dolgu":"Dolgu",
+  "toprak-depolama":"Toprak Depolama",
+  "micir-serimi":"Mıcır Serimi",
+  "hafriyat-kazisi":"Hafriyat Kazısı",
+  "yukleme":"Yükleme",
+  "nakliye":"Nakliye",
+  "diger":"Diğer"
+};
+
+function minutes(){
+  const s=document.getElementById("start_time").value;
+  const e=document.getElementById("end_time").value;
+  if(!s||!e) return 0;
+
+  const [sh,sm]=s.split(":").map(Number);
+  const [eh,em]=e.split(":").map(Number);
+
+  let start=sh*60+sm;
+  let end=eh*60+em;
+
+  if(end<start) end+=1440;
+
+  return end-start;
+}
+
+function updateDuration(){
+  const m=minutes();
+  const h=Math.floor(m/60);
+  const r=m%60;
+  document.getElementById("durationText").textContent=
+    h+" Saat "+String(r).padStart(2,"0")+" Dakika";
+}
+
+document.getElementById("start_time").addEventListener("change",updateDuration);
+document.getElementById("end_time").addEventListener("change",updateDuration);
+
+document.getElementById("machineForm").addEventListener("submit",function(e){
+  e.preventDefault();
+
+  const duration=minutes();
+
+  if(duration<=0){
+    alert("Çalışma saatlerini kontrol edin.");
+    return;
+  }
+
+  const machineId=document.getElementById("machine_id").value;
+  const workId=document.getElementById("work_item_id").value;
+
+  const record={
+    project_code:"TASPAZAR_CAMII",
+    project_id:PROJECT_ID,
+    source:"MANUAL_SLIP_ENTRY",
+    supplier_name:document.getElementById("supplier_name").value.trim(),
+    customer_name:"AKTAN PETROL İNŞAAT",
+    work_date:document.getElementById("work_date").value,
+    slip_no:document.getElementById("slip_no").value.trim(),
+    plate:document.getElementById("plate").value.trim(),
+    machine_id:machineId,
+    machine_name:machines[machineId],
+    start_time:document.getElementById("start_time").value,
+    end_time:document.getElementById("end_time").value,
+    duration_minutes:duration,
+    net_hours:Number((duration/60).toFixed(4)),
+    work_item_id:workId,
+    work_item_name:workItems[workId],
+    customer_representative:
+      document.getElementById("customer_representative").value.trim(),
+    driver:document.getElementById("driver").value.trim(),
+    description:document.getElementById("description").value.trim(),
+    hourly_rate_snapshot:0,
+    amount:0,
+    status:"PENDING"
+  };
+
+  localStorage.setItem(
+    "taspazar_machine_pending_entry",
+    JSON.stringify(record)
+  );
+
+  const notice=document.getElementById("notice");
+  notice.style.display="block";
+  notice.textContent=
+    "Fiş hazırlandı. Kayıt ONAY BEKLİYOR durumunda oluşturulacaktır.";
+
+  console.log("MACHINE_PENDING_RECORD",record);
+});
+
+document.getElementById("machineForm").addEventListener("reset",function(){
+  setTimeout(updateDuration,0);
+});
+</script>
+
+</body>
+</html>
