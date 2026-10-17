@@ -1,6 +1,6 @@
-/* ORYVEX_SW_V15_3 */
-const CACHE='oryvex-santiye-shell-v15-3';
-const SHELL=['/','/index.html','/giris.html','/modul.html','/proje-detay.html','/operasyon.html','/finans.html','/beton.html','/beton-core.js','/cari.html','/depo-evrak.html','/raporlar.html','/yonetici.html','/ayarlar.html','/kullanicilar.html','/sistem-kontrol.html','/global-nav.js','/activity-nav.js','/access-ui.js','/session-watch.js','/runtime-fixes.js','/project-detail-links.js','/mobile-nav.js','/pwa.js','/manifest.webmanifest','/oryvex-santiye-icon.svg'];
+/* ORYVEX_SW_V16_0 */
+const CACHE='oryvex-santiye-shell-v16-0';
+const SHELL=['/','/index.html','/giris.html','/modul.html','/proje-detay.html','/operasyon.html','/finans.html','/beton.html','/beton-core.js','/cari.html','/depo-evrak.html','/raporlar.html','/yonetici.html','/ayarlar.html','/kullanicilar.html','/sistem-kontrol.html','/global-nav.js','/activity-nav.js','/access-ui.js','/session-watch.js','/runtime-fixes.js','/project-detail-links.js','/mobile-nav.js','/pwa.js','/manifest.webmanifest','/oryvex-santiye-icon.svg','/harita/','/harita/index.html','/harita/supabase-config.js','/harita/data/taspazar-hizmet-kayitlari.csv'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).catch(()=>{}));self.skipWaiting()});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim()});
 async function networkFirstNavigation(req){try{const res=await fetch(req,{cache:'no-store'});if(res&&res.ok){const c=await caches.open(CACHE);c.put(req,res.clone()).catch(()=>{})}return res}catch{const url=new URL(req.url);return (await caches.match(req))||(await caches.match(url.pathname))||(await caches.match('/giris.html'))}}
