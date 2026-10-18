@@ -1,0 +1,13 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "oryvex-core",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-16",
+  "vars": {
+    "ORYVEX_ENV": "pilot",
+    "ORYVEX_RUNTIME": "cloudflare"
+  },
+  "observability": {
+    "enabled": true
+  }
+}
